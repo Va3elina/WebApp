@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Настройка фильтров</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #map {
+      height: 300px;
+      width: 100%;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>Настройка фильтров</h1>
+  
+  <!-- Карта -->
+  <div id="map">[Место для карты]</div>
+
+  <!-- Ползунки -->
+  <label for="price">Цена:</label>
+  <input type="range" id="price" min="500" max="2000" step="50" value="800">
+  <span id="price-value">800 €</span>
+
+  <label for="size">Площадь (м²):</label>
+  <input type="range" id="size" min="20" max="100" step="5" value="50">
+  <span id="size-value">50 м²</span>
+
+  <!-- Чекбокс -->
+  <label>
+    <input type="checkbox" id="temporary" checked> Включить временную аренду
+  </label>
+
+  <!-- Кнопка сохранить -->
+  <button id="save">Сохранить фильтры</button>
+
+  <script>
+    // Telegram WebApp API
+    const tg = window.Telegram.WebApp;
+
+    // Обновление значений ползунков
+    const priceInput = document.getElementById('price');
+    const sizeInput = document.getElementById('size');
+
+    priceInput.addEventListener('input', () => {
+      document.getElementById('price-value').textContent = priceInput.value + ' €';
+    });
+
+    sizeInput.addEventListener('input', () => {
+      document.getElementById('size-value').textContent = sizeInput.value + ' м²';
+    });
+
+    // Отправка данных в Telegram
+    document.getElementById('save').addEventListener('click', () => {
+      const filters = {
+        price: priceInput.value,
+        size: sizeInput.value,
+        temporary: document.getElementById('temporary').checked,
+      };
+
+      // Отправляем данные обратно в бота
+      tg.sendData(JSON.stringify(filters));
+    });
+  </script>
+</body>
+</html>
