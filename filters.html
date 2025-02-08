@@ -18,23 +18,16 @@
       border: 1px solid #ccc;
     }
     label {
-      font-weight: bold;
       display: block;
       margin: 10px 0 5px;
     }
-    .range-slider {
+    .slider-container {
+      margin: 20px 0;
+    }
+    .slider-values {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 10px;
-    }
-    .range-slider input[type="range"] {
-      flex: 1;
-    }
-    .range-slider span {
-      width: 50px;
-      text-align: center;
+      margin-top: 10px;
     }
     button {
       background-color: #007bff;
@@ -43,7 +36,6 @@
       padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 20px;
       width: 100%;
     }
     button:hover {
@@ -52,11 +44,11 @@
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.locatecontrol/0.72.0/L.Control.Locate.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.locatecontrol/0.72.0/L.Control.Locate.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.css" />
 </head>
 <body>
   <h1>Filtereinstellungen</h1>
@@ -65,21 +57,23 @@
   <div id="map"></div>
 
   <!-- Диапазон цен -->
-  <label>Preisbereich (€):</label>
-  <div class="range-slider">
-    <span id="price-min-value">1000</span>
-    <input type="range" id="price-min" min="0" max="5000" value="1000">
-    <input type="range" id="price-max" min="0" max="5000" value="3000">
-    <span id="price-max-value">3000</span>
+  <div class="slider-container">
+    <label for="price-range">Preisbereich (€):</label>
+    <div id="price-range"></div>
+    <div class="slider-values">
+      <span id="price-min">0</span>
+      <span id="price-max">3000</span>
+    </div>
   </div>
 
   <!-- Диапазон площади -->
-  <label>Größenbereich (m²):</label>
-  <div class="range-slider">
-    <span id="size-min-value">50</span>
-    <input type="range" id="size-min" min="10" max="200" value="50">
-    <input type="range" id="size-max" min="10" max="200" value="100">
-    <span id="size-max-value">100</span>
+  <div class="slider-container">
+    <label for="size-range">Größenbereich (m²):</label>
+    <div id="size-range"></div>
+    <div class="slider-values">
+      <span id="size-min">10</span>
+      <span id="size-max">100</span>
+    </div>
   </div>
 
   <!-- Чекбокс -->
@@ -94,21 +88,21 @@
     // Telegram WebApp API
     const tg = window.Telegram.WebApp;
 
-    // Карта с использованием Leaflet.js
+    // Инициализация карты
     const map = L.map('map').setView([51.1657, 10.4515], 6); // Германия
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Добавление функционала выбора области
+    // Добавляем инструменты рисования
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
     const drawControl = new L.Control.Draw({
       draw: {
+        polygon: true,
         rectangle: true,
         circle: true,
-        polygon: true,
         polyline: false,
         marker: false
       },
@@ -120,45 +114,56 @@
 
     map.on(L.Draw.Event.CREATED, function (event) {
       const layer = event.layer;
-      drawnItems.clearLayers(); // Очищаем предыдущие фигуры
+      drawnItems.clearLayers(); // Очищаем предыдущую область
       drawnItems.addLayer(layer);
     });
 
-    // Добавление кнопки определения местоположения
+    // Добавляем кнопку геолокации
     L.control.locate({
       position: 'topleft',
       strings: {
-        title: "Zeige meinen Standort"
-      },
-      setView: true,
-      keepCurrentZoomLevel: true
+        title: "Zeige mir meine Position"
+      }
     }).addTo(map);
 
-    // Обновление значений ползунков
-    const updateValue = (slider, display) => {
-      slider.addEventListener('input', () => {
-        display.textContent = slider.value;
-      });
-    };
+    // Инициализация noUiSlider для цены
+    const priceSlider = document.getElementById('price-range');
+    noUiSlider.create(priceSlider, {
+      start: [1000, 3000],
+      connect: true,
+      range: {
+        min: 0,
+        max: 5000
+      }
+    });
 
-    updateValue(document.getElementById('price-min'), document.getElementById('price-min-value'));
-    updateValue(document.getElementById('price-max'), document.getElementById('price-max-value'));
-    updateValue(document.getElementById('size-min'), document.getElementById('size-min-value'));
-    updateValue(document.getElementById('size-max'), document.getElementById('size-max-value'));
+    priceSlider.noUiSlider.on('update', (values) => {
+      document.getElementById('price-min').textContent = Math.round(values[0]);
+      document.getElementById('price-max').textContent = Math.round(values[1]);
+    });
 
-    // Отправка данных в Telegram
+    // Инициализация noUiSlider для площади
+    const sizeSlider = document.getElementById('size-range');
+    noUiSlider.create(sizeSlider, {
+      start: [20, 100],
+      connect: true,
+      range: {
+        min: 10,
+        max: 200
+      }
+    });
+
+    sizeSlider.noUiSlider.on('update', (values) => {
+      document.getElementById('size-min').textContent = Math.round(values[0]);
+      document.getElementById('size-max').textContent = Math.round(values[1]);
+    });
+
+    // Обработчик кнопки "Сохранить"
     document.getElementById('save').addEventListener('click', () => {
       const filters = {
-        priceRange: [
-          document.getElementById('price-min').value,
-          document.getElementById('price-max').value
-        ],
-        sizeRange: [
-          document.getElementById('size-min').value,
-          document.getElementById('size-max').value
-        ],
-        temporary: document.getElementById('temporary').checked,
-        area: drawnItems.toGeoJSON() // Геоданные выбранной области
+        price: priceSlider.noUiSlider.get(),
+        size: sizeSlider.noUiSlider.get(),
+        temporary: document.getElementById('temporary').checked
       };
 
       tg.sendData(JSON.stringify(filters));
