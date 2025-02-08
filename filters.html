@@ -12,7 +12,7 @@
       box-sizing: border-box;
     }
     #map {
-      height: 400px;
+      height: 300px;
       width: 100%;
       margin-bottom: 20px;
       border: 1px solid #ccc;
@@ -21,8 +21,15 @@
       display: block;
       margin: 10px 0 5px;
     }
-    input[type="range"] {
-      width: 100%;
+    .slider-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .slider-value {
+      margin: 0 10px;
+      font-weight: bold;
     }
     button {
       background-color: #007bff;
@@ -40,9 +47,7 @@
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 </head>
 <body>
   <h1>Filtereinstellungen</h1>
@@ -50,14 +55,23 @@
   <!-- Карта -->
   <div id="map"></div>
 
-  <!-- Ползунки -->
-  <label for="price">Preis:</label>
-  <input type="range" id="price" min="0" max="2000" step="50" value="800">
-  <span id="price-value">800 €</span>
+  <!-- Диапазон цен -->
+  <label for="price-range">Preisbereich (€):</label>
+  <div class="slider-container">
+    <input type="range" id="price-min" min="0" max="5000" step="100" value="1000">
+    <span class="slider-value" id="price-min-value">1000</span>
+    <input type="range" id="price-max" min="0" max="5000" step="100" value="3000">
+    <span class="slider-value" id="price-max-value">3000</span>
+  </div>
 
-  <label for="size">Größe (m²):</label>
-  <input type="range" id="size" min="10" max="100" step="5" value="50">
-  <span id="size-value">50 m²</span>
+  <!-- Диапазон площади -->
+  <label for="size-range">Größenbereich (m²):</label>
+  <div class="slider-container">
+    <input type="range" id="size-min" min="10" max="200" step="5" value="50">
+    <span class="slider-value" id="size-min-value">50</span>
+    <input type="range" id="size-max" min="10" max="200" step="5" value="100">
+    <span class="slider-value" id="size-max-value">100</span>
+  </div>
 
   <!-- Чекбокс -->
   <label>
@@ -77,56 +91,43 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Инструменты рисования Leaflet Draw
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
-    const drawControl = new L.Control.Draw({
-      draw: {
-        circle: true,       // Включаем только круги
-        polygon: false,     // Отключаем многоугольники
-        rectangle: false,   // Отключаем прямоугольники
-        polyline: false,    // Отключаем линии
-        marker: false       // Отключаем точки
-      },
-      edit: {
-        featureGroup: drawnItems
+    // Добавление кнопки центрирования на текущем местоположении
+    map.locate({ setView: true, maxZoom: 16 });
+    const locateControl = L.control.locate({
+      position: 'topleft',
+      strings: {
+        title: "Zeige meinen Standort"
       }
-    });
-    map.addControl(drawControl);
+    }).addTo(map);
 
-    let selectedArea = null;
+    // Обновление значений диапазонов
+    const priceMinInput = document.getElementById('price-min');
+    const priceMaxInput = document.getElementById('price-max');
+    const sizeMinInput = document.getElementById('size-min');
+    const sizeMaxInput = document.getElementById('size-max');
 
-    // Событие при завершении рисования области
-    map.on(L.Draw.Event.CREATED, function (event) {
-      const layer = event.layer;
-      drawnItems.clearLayers(); // Удаляем предыдущие области
-      drawnItems.addLayer(layer);
-      selectedArea = {
-        center: layer.getLatLng(),  // Центральная точка круга
-        radius: layer.getRadius()  // Радиус круга
-      };
+    priceMinInput.addEventListener('input', () => {
+      document.getElementById('price-min-value').textContent = priceMinInput.value;
     });
 
-    // Обновление значений ползунков
-    const priceInput = document.getElementById('price');
-    const sizeInput = document.getElementById('size');
-
-    priceInput.addEventListener('input', () => {
-      document.getElementById('price-value').textContent = priceInput.value + ' €';
+    priceMaxInput.addEventListener('input', () => {
+      document.getElementById('price-max-value').textContent = priceMaxInput.value;
     });
 
-    sizeInput.addEventListener('input', () => {
-      document.getElementById('size-value').textContent = sizeInput.value + ' m²';
+    sizeMinInput.addEventListener('input', () => {
+      document.getElementById('size-min-value').textContent = sizeMinInput.value;
+    });
+
+    sizeMaxInput.addEventListener('input', () => {
+      document.getElementById('size-max-value').textContent = sizeMaxInput.value;
     });
 
     // Отправка данных в Telegram
     document.getElementById('save').addEventListener('click', () => {
       const filters = {
-        price: priceInput.value,
-        size: sizeInput.value,
-        temporary: document.getElementById('temporary').checked,
-        area: selectedArea || null // Центральная точка и радиус круга
+        priceRange: [priceMinInput.value, priceMaxInput.value],
+        sizeRange: [sizeMinInput.value, sizeMaxInput.value],
+        temporary: document.getElementById('temporary').checked
       };
 
       // Отправляем данные обратно в бота
