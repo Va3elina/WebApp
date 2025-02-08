@@ -83,9 +83,9 @@
 
     const drawControl = new L.Control.Draw({
       draw: {
-        polygon: true,      // Пользователь может рисовать многоугольники
-        rectangle: true,    // Пользователь может рисовать прямоугольники
-        circle: false,      // Отключаем круги
+        circle: true,       // Включаем только круги
+        polygon: false,     // Отключаем многоугольники
+        rectangle: false,   // Отключаем прямоугольники
         polyline: false,    // Отключаем линии
         marker: false       // Отключаем точки
       },
@@ -102,7 +102,10 @@
       const layer = event.layer;
       drawnItems.clearLayers(); // Удаляем предыдущие области
       drawnItems.addLayer(layer);
-      selectedArea = layer.toGeoJSON(); // Сохраняем выбранную область как GeoJSON
+      selectedArea = {
+        center: layer.getLatLng(),  // Центральная точка круга
+        radius: layer.getRadius()  // Радиус круга
+      };
     });
 
     // Обновление значений ползунков
@@ -123,7 +126,7 @@
         price: priceInput.value,
         size: sizeInput.value,
         temporary: document.getElementById('temporary').checked,
-        area: selectedArea || null // GeoJSON выбранной области
+        area: selectedArea || null // Центральная точка и радиус круга
       };
 
       // Отправляем данные обратно в бота
