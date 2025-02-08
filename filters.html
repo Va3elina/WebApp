@@ -25,11 +25,16 @@
     .range-slider {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       margin-bottom: 20px;
       gap: 10px;
     }
-    .range-slider input {
-      width: 45%;
+    .range-slider input[type="range"] {
+      flex: 1;
+    }
+    .range-slider span {
+      width: 50px;
+      text-align: center;
     }
     button {
       background-color: #007bff;
@@ -48,8 +53,10 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.locatecontrol/0.72.0/L.Control.Locate.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.locatecontrol/0.72.0/L.Control.Locate.min.css" />
 </head>
 <body>
   <h1>Filtereinstellungen</h1>
@@ -60,15 +67,19 @@
   <!-- Диапазон цен -->
   <label>Preisbereich (€):</label>
   <div class="range-slider">
-    <input type="number" id="price-min" min="0" max="5000" value="1000">
-    <input type="number" id="price-max" min="0" max="5000" value="3000">
+    <span id="price-min-value">1000</span>
+    <input type="range" id="price-min" min="0" max="5000" value="1000">
+    <input type="range" id="price-max" min="0" max="5000" value="3000">
+    <span id="price-max-value">3000</span>
   </div>
 
   <!-- Диапазон площади -->
   <label>Größenbereich (m²):</label>
   <div class="range-slider">
-    <input type="number" id="size-min" min="10" max="200" value="50">
-    <input type="number" id="size-max" min="10" max="200" value="100">
+    <span id="size-min-value">50</span>
+    <input type="range" id="size-min" min="10" max="200" value="50">
+    <input type="range" id="size-max" min="10" max="200" value="100">
+    <span id="size-max-value">100</span>
   </div>
 
   <!-- Чекбокс -->
@@ -122,6 +133,18 @@
       setView: true,
       keepCurrentZoomLevel: true
     }).addTo(map);
+
+    // Обновление значений ползунков
+    const updateValue = (slider, display) => {
+      slider.addEventListener('input', () => {
+        display.textContent = slider.value;
+      });
+    };
+
+    updateValue(document.getElementById('price-min'), document.getElementById('price-min-value'));
+    updateValue(document.getElementById('price-max'), document.getElementById('price-max-value'));
+    updateValue(document.getElementById('size-min'), document.getElementById('size-min-value'));
+    updateValue(document.getElementById('size-max'), document.getElementById('size-max-value'));
 
     // Отправка данных в Telegram
     document.getElementById('save').addEventListener('click', () => {
