@@ -12,7 +12,7 @@
       box-sizing: border-box;
     }
     #map {
-      height: 300px;
+      height: 400px;
       width: 100%;
       margin-bottom: 20px;
       border: 1px solid #ccc;
@@ -75,31 +75,15 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    let selectedArea = null;
+    let searchCircle = null;
 
-    // Выбор области на карте
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
-    const drawControl = new L.Control.Draw({
-      draw: {
-        polygon: true,
-        rectangle: true,
-        circle: false,
-        polyline: false,
-        marker: false
-      },
-      edit: {
-        featureGroup: drawnItems
+    // Добавление функции выбора радиуса
+    map.on('click', function(e) {
+      const radius = 10000; // 10 км по умолчанию
+      if (searchCircle) {
+        map.removeLayer(searchCircle);
       }
-    });
-    map.addControl(drawControl);
-
-    map.on(L.Draw.Event.CREATED, function (event) {
-      const layer = event.layer;
-      drawnItems.clearLayers(); // Очищаем предыдущую область
-      drawnItems.addLayer(layer);
-      selectedArea = layer.getLatLngs(); // Сохраняем координаты области
+      searchCircle = L.circle(e.latlng, { radius }).addTo(map);
     });
 
     // Обновление значений ползунков
@@ -120,7 +104,12 @@
         price: priceInput.value,
         size: sizeInput.value,
         temporary: document.getElementById('temporary').checked,
-        area: selectedArea || null // Координаты выбранной области
+        searchArea: searchCircle
+          ? {
+              center: searchCircle.getLatLng(),
+              radius: searchCircle.getRadius(),
+            }
+          : null,
       };
 
       // Отправляем данные обратно в бота
