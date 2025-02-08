@@ -12,24 +12,27 @@
       box-sizing: border-box;
     }
     #map {
-      height: 300px;
+      height: 400px;
       width: 100%;
       margin-bottom: 20px;
       border: 1px solid #ccc;
     }
     label {
+      font-weight: bold;
       display: block;
       margin: 10px 0 5px;
     }
-    .slider-container {
+    .range-slider {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
       margin-bottom: 20px;
     }
-    .slider-value {
-      margin: 0 10px;
-      font-weight: bold;
+    .range-slider input {
+      width: 100%;
+    }
+    .range-slider span {
+      display: flex;
+      justify-content: space-between;
     }
     button {
       background-color: #007bff;
@@ -57,20 +60,22 @@
 
   <!-- Диапазон цен -->
   <label for="price-range">Preisbereich (€):</label>
-  <div class="slider-container">
-    <input type="range" id="price-min" min="0" max="5000" step="100" value="1000">
-    <span class="slider-value" id="price-min-value">1000</span>
-    <input type="range" id="price-max" min="0" max="5000" step="100" value="3000">
-    <span class="slider-value" id="price-max-value">3000</span>
+  <div class="range-slider">
+    <span>
+      <span id="price-min-value">1000</span>
+      <span id="price-max-value">3000</span>
+    </span>
+    <input type="range" id="price-range" min="0" max="5000" step="100" value="1000,3000">
   </div>
 
   <!-- Диапазон площади -->
   <label for="size-range">Größenbereich (m²):</label>
-  <div class="slider-container">
-    <input type="range" id="size-min" min="10" max="200" step="5" value="50">
-    <span class="slider-value" id="size-min-value">50</span>
-    <input type="range" id="size-max" min="10" max="200" step="5" value="100">
-    <span class="slider-value" id="size-max-value">100</span>
+  <div class="range-slider">
+    <span>
+      <span id="size-min-value">50</span>
+      <span id="size-max-value">100</span>
+    </span>
+    <input type="range" id="size-range" min="10" max="200" step="5" value="50,100">
   </div>
 
   <!-- Чекбокс -->
@@ -91,46 +96,70 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Добавление кнопки центрирования на текущем местоположении
-    map.locate({ setView: true, maxZoom: 16 });
-    const locateControl = L.control.locate({
+    // Добавление кнопки определения местоположения
+    L.control.locate({
       position: 'topleft',
       strings: {
         title: "Zeige meinen Standort"
-      }
+      },
+      setView: true,
+      keepCurrentZoomLevel: true
     }).addTo(map);
 
-    // Обновление значений диапазонов
-    const priceMinInput = document.getElementById('price-min');
-    const priceMaxInput = document.getElementById('price-max');
-    const sizeMinInput = document.getElementById('size-min');
-    const sizeMaxInput = document.getElementById('size-max');
+    // Добавление функционала выбора области
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
 
-    priceMinInput.addEventListener('input', () => {
-      document.getElementById('price-min-value').textContent = priceMinInput.value;
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polygon: true,
+        rectangle: true,
+        circle: true,
+        polyline: false,
+        marker: false
+      },
+      edit: {
+        featureGroup: drawnItems
+      }
+    });
+    map.addControl(drawControl);
+
+    map.on(L.Draw.Event.CREATED, function (event) {
+      const layer = event.layer;
+      drawnItems.clearLayers(); // Очищаем предыдущую область
+      drawnItems.addLayer(layer);
     });
 
-    priceMaxInput.addEventListener('input', () => {
-      document.getElementById('price-max-value').textContent = priceMaxInput.value;
+    // Обновление диапазона цены
+    const priceRange = document.getElementById('price-range');
+    const priceMinValue = document.getElementById('price-min-value');
+    const priceMaxValue = document.getElementById('price-max-value');
+
+    priceRange.addEventListener('input', () => {
+      const [min, max] = priceRange.value.split(',');
+      priceMinValue.textContent = min;
+      priceMaxValue.textContent = max;
     });
 
-    sizeMinInput.addEventListener('input', () => {
-      document.getElementById('size-min-value').textContent = sizeMinInput.value;
-    });
+    // Обновление диапазона площади
+    const sizeRange = document.getElementById('size-range');
+    const sizeMinValue = document.getElementById('size-min-value');
+    const sizeMaxValue = document.getElementById('size-max-value');
 
-    sizeMaxInput.addEventListener('input', () => {
-      document.getElementById('size-max-value').textContent = sizeMaxInput.value;
+    sizeRange.addEventListener('input', () => {
+      const [min, max] = sizeRange.value.split(',');
+      sizeMinValue.textContent = min;
+      sizeMaxValue.textContent = max;
     });
 
     // Отправка данных в Telegram
     document.getElementById('save').addEventListener('click', () => {
       const filters = {
-        priceRange: [priceMinInput.value, priceMaxInput.value],
-        sizeRange: [sizeMinInput.value, sizeMaxInput.value],
+        priceRange: [priceMinValue.textContent, priceMaxValue.textContent],
+        sizeRange: [sizeMinValue.textContent, sizeMaxValue.textContent],
         temporary: document.getElementById('temporary').checked
       };
 
-      // Отправляем данные обратно в бота
       tg.sendData(JSON.stringify(filters));
     });
   </script>
