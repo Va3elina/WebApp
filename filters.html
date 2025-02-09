@@ -20,20 +20,20 @@
       border: 1px solid #ccc;
     }
     .slider-container {
-      margin: 15px 0; /* Увеличенный отступ */
+      margin: 15px 0;
     }
     .slider-container label {
       display: block;
-      margin-bottom: 10px; /* Отступ между названием и ползунком */
+      margin-bottom: 10px;
       font-weight: bold;
     }
     .slider-values {
       display: flex;
       justify-content: space-between;
-      margin-top: 15px; /* Увеличенный отступ между ползунком и значениями */
+      margin-top: 15px;
     }
     button {
-      background-color: #007bff; /* Синий цвет */
+      background-color: #007bff;
       color: white;
       border: none;
       padding: 10px 20px;
@@ -45,14 +45,14 @@
       background-color: #0056b3;
     }
     .noUi-handle {
-      background-color: #007bff !important; /* Синий цвет для ползунков */
+      background-color: #007bff !important;
       border: none !important;
     }
     .noUi-connect {
-      background-color: #007bff !important; /* Синий цвет заполнения */
+      background-color: #007bff !important;
     }
     .noUi-base {
-      background-color: #e5e5e5 !important; /* Светлый трек */
+      background-color: #e5e5e5 !important;
     }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -109,12 +109,11 @@
     document.body.style.setProperty("--text-color", theme.text_color || "black");
 
     // Инициализация карты
-    const map = L.map('map').setView([51.1657, 10.4515], 6); // Германия
+    const map = L.map('map').setView([51.1657, 10.4515], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Добавляем инструменты рисования
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
@@ -134,7 +133,7 @@
 
     map.on(L.Draw.Event.CREATED, function (event) {
       const layer = event.layer;
-      drawnItems.clearLayers(); // Очищаем предыдущую область
+      drawnItems.clearLayers();
       drawnItems.addLayer(layer);
     });
 
@@ -183,10 +182,11 @@
       const filters = {
         price: priceSlider.noUiSlider.get(),
         size: sizeSlider.noUiSlider.get(),
+        area: drawnItems.toGeoJSON(), // Сохраняем область как GeoJSON
         temporary: document.getElementById('temporary').checked
       };
 
-      tg.sendData(JSON.stringify(filters));
+      tg.sendData(JSON.stringify(filters)); // Отправляем данные в Telegram
     });
   </script>
 </body>
