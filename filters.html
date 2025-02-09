@@ -185,7 +185,7 @@
         area: drawnItems.toGeoJSON(), // Сохраняем область как GeoJSON
         temporary: document.getElementById('temporary').checked
       };
-
+      console.log(filters);
       tg.sendData(JSON.stringify(filters)); // Отправляем данные в Telegram
     });
   </script>
