@@ -10,8 +10,6 @@
       margin: 0;
       padding: 20px;
       box-sizing: border-box;
-      background-color: var(--bg-color, white);
-      color: var(--text-color, black);
     }
     #map {
       height: 400px;
@@ -20,20 +18,19 @@
       border: 1px solid #ccc;
     }
     .slider-container {
-      margin: 40px 0; /* Увеличенный отступ */
-    }
-    .slider-container label {
-      display: block;
-      margin-bottom: 10px; /* Отступ между названием и ползунком */
-      font-weight: bold;
+      margin: 30px 0;
     }
     .slider-values {
       display: flex;
       justify-content: space-between;
-      margin-top: 15px; /* Увеличенный отступ между ползунком и значениями */
+      margin-top: 10px;
+    }
+    label {
+      font-size: 16px;
+      font-weight: bold;
     }
     button {
-      background-color: #007bff; /* Синий цвет */
+      background-color: #007bff;
       color: white;
       border: none;
       padding: 10px 20px;
@@ -43,16 +40,6 @@
     }
     button:hover {
       background-color: #0056b3;
-    }
-    .noUi-handle {
-      background-color: #007bff !important; /* Синий цвет для ползунков */
-      border: none !important;
-    }
-    .noUi-connect {
-      background-color: #007bff !important; /* Синий цвет заполнения */
-    }
-    .noUi-base {
-      background-color: #e5e5e5 !important; /* Светлый трек */
     }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -102,11 +89,6 @@
   <script>
     // Telegram WebApp API
     const tg = window.Telegram.WebApp;
-
-    // Устанавливаем тему
-    const theme = tg.themeParams;
-    document.body.style.setProperty("--bg-color", theme.bg_color || "white");
-    document.body.style.setProperty("--text-color", theme.text_color || "black");
 
     // Инициализация карты
     const map = L.map('map').setView([51.1657, 10.4515], 6); // Германия
@@ -179,13 +161,16 @@
     });
 
     // Обработчик кнопки "Сохранить"
-    document.getElementById('save').addEventListener('click', () => {
+    document.getElementById('save').addEventListener('click', async () => {
       const filters = {
-        price: priceSlider.noUiSlider.get(),
-        size: sizeSlider.noUiSlider.get(),
-        temporary: document.getElementById('temporary').checked
+        min_price: Math.round(priceSlider.noUiSlider.get()[0]),
+        max_price: Math.round(priceSlider.noUiSlider.get()[1]),
+        min_q: Math.round(sizeSlider.noUiSlider.get()[0]),
+        max_q: Math.round(sizeSlider.noUiSlider.get()[1]),
+        adresse: drawnItems.toGeoJSON(), // Координаты выделенной области
       };
 
+      // Передача данных в бот
       tg.sendData(JSON.stringify(filters));
     });
   </script>
