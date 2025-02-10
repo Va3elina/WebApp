@@ -68,10 +68,8 @@
 <body>
   <h1>Filtereinstellungen</h1>
   
-  <!-- Карта -->
   <div id="map"></div>
 
-  <!-- Диапазон цен -->
   <div class="slider-container">
     <label for="price-range">Preisbereich (€):</label>
     <div id="price-range"></div>
@@ -81,7 +79,6 @@
     </div>
   </div>
 
-  <!-- Диапазон площади -->
   <div class="slider-container">
     <label for="size-range">Größenbereich (m²):</label>
     <div id="size-range"></div>
@@ -91,24 +88,19 @@
     </div>
   </div>
 
-  <!-- Чекбокс -->
   <label>
     <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
   </label>
 
-  <!-- Кнопка сохранить -->
   <button id="save" style="margin-top: 15px">Filter speichern</button>
 
   <script>
-    // Telegram WebApp API
     const tg = window.Telegram.WebApp;
 
-    // Устанавливаем тему
     const theme = tg.themeParams;
     document.body.style.setProperty("--bg-color", theme.bg_color || "white");
     document.body.style.setProperty("--text-color", theme.text_color || "black");
 
-    // Инициализация карты
     const map = L.map('map').setView([51.1657, 10.4515], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
@@ -137,23 +129,13 @@
       drawnItems.addLayer(layer);
     });
 
-    // Добавляем кнопку геолокации
-    L.control.locate({
-      position: 'topleft',
-      strings: {
-        title: "Zeige mir meine Position"
-      }
-    }).addTo(map);
+    L.control.locate({ position: 'topleft' }).addTo(map);
 
-    // Инициализация noUiSlider для цены
     const priceSlider = document.getElementById('price-range');
     noUiSlider.create(priceSlider, {
       start: [1000, 3000],
       connect: true,
-      range: {
-        min: 0,
-        max: 5000
-      }
+      range: { min: 0, max: 5000 }
     });
 
     priceSlider.noUiSlider.on('update', (values) => {
@@ -161,15 +143,11 @@
       document.getElementById('price-max').textContent = Math.round(values[1]);
     });
 
-    // Инициализация noUiSlider для площади
     const sizeSlider = document.getElementById('size-range');
     noUiSlider.create(sizeSlider, {
       start: [20, 100],
       connect: true,
-      range: {
-        min: 10,
-        max: 200
-      }
+      range: { min: 10, max: 200 }
     });
 
     sizeSlider.noUiSlider.on('update', (values) => {
@@ -177,16 +155,17 @@
       document.getElementById('size-max').textContent = Math.round(values[1]);
     });
 
-    // Обработчик кнопки "Сохранить"
     document.getElementById('save').addEventListener('click', () => {
-    const filters = {
+      const filters = {
         price: priceSlider.noUiSlider.get(),
         size: sizeSlider.noUiSlider.get(),
-        temporary: document.getElementById('temporary').checked,
-        area: drawnItems.toGeoJSON()
-    };
-    tg.sendData(JSON.stringify(filters));
-});
+        area: drawnItems.toGeoJSON(),
+        temporary: document.getElementById('temporary').checked
+      };
+
+      console.log(filters); // Логируем данные для отладки
+      tg.sendData(JSON.stringify(filters));
+    });
   </script>
 </body>
 </html>
