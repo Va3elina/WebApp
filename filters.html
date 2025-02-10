@@ -57,19 +57,12 @@
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.css" />
 </head>
 <body>
   <h1>Filtereinstellungen</h1>
-  
   <div id="map"></div>
-
   <div class="slider-container">
     <label for="price-range">Preisbereich (€):</label>
     <div id="price-range"></div>
@@ -78,7 +71,6 @@
       <span id="price-max">3000</span>
     </div>
   </div>
-
   <div class="slider-container">
     <label for="size-range">Größenbereich (m²):</label>
     <div id="size-range"></div>
@@ -87,83 +79,37 @@
       <span id="size-max">100</span>
     </div>
   </div>
-
-  <label>
-    <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
-  </label>
-
-  <button id="save" style="margin-top: 15px">Filter speichern</button>
-
+  <button id="save">Filter speichern</button>
   <script>
     const tg = window.Telegram.WebApp;
-
-    const theme = tg.themeParams;
-    document.body.style.setProperty("--bg-color", theme.bg_color || "white");
-    document.body.style.setProperty("--text-color", theme.text_color || "black");
-
-    const map = L.map('map').setView([51.1657, 10.4515], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
-    const drawControl = new L.Control.Draw({
-      draw: {
-        polygon: true,
-        rectangle: true,
-        circle: true,
-        polyline: false,
-        marker: false
-      },
-      edit: {
-        featureGroup: drawnItems
-      }
-    });
-    map.addControl(drawControl);
-
-    map.on(L.Draw.Event.CREATED, function (event) {
-      const layer = event.layer;
-      drawnItems.clearLayers();
-      drawnItems.addLayer(layer);
-    });
-
-    L.control.locate({ position: 'topleft' }).addTo(map);
 
     const priceSlider = document.getElementById('price-range');
     noUiSlider.create(priceSlider, {
       start: [1000, 3000],
       connect: true,
-      range: { min: 0, max: 5000 }
-    });
-
-    priceSlider.noUiSlider.on('update', (values) => {
-      document.getElementById('price-min').textContent = Math.round(values[0]);
-      document.getElementById('price-max').textContent = Math.round(values[1]);
+      range: {
+        min: 0,
+        max: 5000
+      }
     });
 
     const sizeSlider = document.getElementById('size-range');
     noUiSlider.create(sizeSlider, {
       start: [20, 100],
       connect: true,
-      range: { min: 10, max: 200 }
-    });
-
-    sizeSlider.noUiSlider.on('update', (values) => {
-      document.getElementById('size-min').textContent = Math.round(values[0]);
-      document.getElementById('size-max').textContent = Math.round(values[1]);
+      range: {
+        min: 10,
+        max: 200
+      }
     });
 
     document.getElementById('save').addEventListener('click', () => {
       const filters = {
         price: priceSlider.noUiSlider.get(),
         size: sizeSlider.noUiSlider.get(),
-        area: drawnItems.toGeoJSON(),
-        temporary: document.getElementById('temporary').checked
+        temporary: true
       };
-
-      console.log(filters); // Логируем данные для отладки
+      console.log("Отправляем данные в Telegram: ", filters);
       tg.sendData(JSON.stringify(filters));
     });
   </script>
