@@ -57,6 +57,9 @@
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.css" />
 </head>
@@ -79,37 +82,51 @@
       <span id="size-max">100</span>
     </div>
   </div>
-  <button id="save">Filter speichern</button>
+  <label>
+    <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
+  </label>
+  <button id="save" style="margin-top: 15px">Filter speichern</button>
   <script>
     const tg = window.Telegram.WebApp;
+
+    tg.expand();
+    const theme = tg.themeParams;
+    document.body.style.setProperty("--bg-color", theme.bg_color || "white");
+    document.body.style.setProperty("--text-color", theme.text_color || "black");
+
+    const map = L.map('map').setView([51.1657, 10.4515], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
     const priceSlider = document.getElementById('price-range');
     noUiSlider.create(priceSlider, {
       start: [1000, 3000],
       connect: true,
-      range: {
-        min: 0,
-        max: 5000
-      }
+      range: { min: 0, max: 5000 }
+    });
+    priceSlider.noUiSlider.on('update', values => {
+      document.getElementById('price-min').textContent = Math.round(values[0]);
+      document.getElementById('price-max').textContent = Math.round(values[1]);
     });
 
     const sizeSlider = document.getElementById('size-range');
     noUiSlider.create(sizeSlider, {
       start: [20, 100],
       connect: true,
-      range: {
-        min: 10,
-        max: 200
-      }
+      range: { min: 10, max: 200 }
+    });
+    sizeSlider.noUiSlider.on('update', values => {
+      document.getElementById('size-min').textContent = Math.round(values[0]);
+      document.getElementById('size-max').textContent = Math.round(values[1]);
     });
 
     document.getElementById('save').addEventListener('click', () => {
       const filters = {
         price: priceSlider.noUiSlider.get(),
         size: sizeSlider.noUiSlider.get(),
-        temporary: true
+        temporary: document.getElementById('temporary').checked
       };
-      console.log("Отправляем данные в Telegram: ", filters);
       tg.sendData(JSON.stringify(filters));
     });
   </script>
