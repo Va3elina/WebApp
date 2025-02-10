@@ -179,15 +179,14 @@
 
     // Обработчик кнопки "Сохранить"
     document.getElementById('save').addEventListener('click', () => {
-      const filters = {
+    const filters = {
         price: priceSlider.noUiSlider.get(),
         size: sizeSlider.noUiSlider.get(),
-        area: drawnItems.toGeoJSON(), // Сохраняем область как GeoJSON
-        temporary: document.getElementById('temporary').checked
-      };
-      console.log(filters);
-      tg.sendData(JSON.stringify(filters)); // Отправляем данные в Telegram
-    });
+        temporary: document.getElementById('temporary').checked,
+        area: drawnItems.toGeoJSON()
+    };
+    tg.sendData(JSON.stringify(filters));
+});
   </script>
 </body>
 </html>
