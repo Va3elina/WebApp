@@ -1,26 +1,38 @@
-<script>
-    document.getElementById("sendData").addEventListener("click", () => {
-        const user = window.Telegram.WebApp.initDataUnsafe.user;
-        if (!user) {
-            console.error("❌ Ошибка: Не удалось получить данные пользователя");
-            return;
-        }
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Telegram WebApp</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <h1>Настройки фильтров</h1>
+    <button id="sendData">Отправить</button>
 
-        // Формируем JSON с фильтрами и user_id
-        const data = {
-            user_id: user.id,
-            username: user.username,
-            filters: { brightness: 50, contrast: 80 }
-        };
+    <script>
+        document.getElementById("sendData").addEventListener("click", () => {
+            const user = window.Telegram.WebApp.initDataUnsafe.user;
+            if (!user) {
+                console.error("❌ Ошибка: Не удалось получить данные пользователя");
+                return;
+            }
 
-        // Отправляем данные на FastAPI
-        fetch("http://127.0.0.1:8000/webapp-data/", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => console.log("✅ Ответ от сервера:", result))
-        .catch(error => console.error("❌ Ошибка при отправке данных:", error));
-    });
-</script>
+            // Формируем JSON с фильтрами и user_id
+            const data = {
+                user_id: user.id,
+                username: user.username,
+                filters: { brightness: 50, contrast: 80 }
+            };
+
+            // Отправляем данные на FastAPI
+            fetch("http://127.0.0.1:8000/webapp-data/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => console.log("✅ Ответ от сервера:", result))
+            .catch(error => console.error("❌ Ошибка при отправке данных:", error));
+        });
+    </script>
+</body>
+</html>
