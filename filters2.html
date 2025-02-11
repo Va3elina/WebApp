@@ -1,16 +1,26 @@
-async function sendDataToServer() {
-    const userTgId = Telegram.WebApp.initDataUnsafe.user.id; // Получаем Telegram ID
-    const data = { tg_id: userTgId, title: "Купить молоко" };
+<script>
+    document.getElementById("sendData").addEventListener("click", () => {
+        const user = window.Telegram.WebApp.initDataUnsafe.user;
+        if (!user) {
+            console.error("❌ Ошибка: Не удалось получить данные пользователя");
+            return;
+        }
 
-    let response = await fetch("http://127.0.0.1:8000/api/add", {  // URL FastAPI
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        // Формируем JSON с фильтрами и user_id
+        const data = {
+            user_id: user.id,
+            username: user.username,
+            filters: { brightness: 50, contrast: 80 }
+        };
+
+        // Отправляем данные на FastAPI
+        fetch("http://127.0.0.1:8000/webapp-data/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => console.log("✅ Ответ от сервера:", result))
+        .catch(error => console.error("❌ Ошибка при отправке данных:", error));
     });
-
-    let result = await response.json();
-    console.log("Ответ сервера:", result);
-}
-
-Telegram.WebApp.ready();
-sendDataToServer();
+</script>
