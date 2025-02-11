@@ -4,93 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Filtereinstellungen</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-      background-color: var(--bg-color, white);
-      color: var(--text-color, black);
-    }
-    #map {
-      height: 400px;
-      width: 100%;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-    }
-    .slider-container {
-      margin: 15px 0;
-    }
-    .slider-container label {
-      display: block;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-    .slider-values {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-    }
-    button {
-      background-color: var(--button-color, #007bff);
-      color: var(--button-text-color, white);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-      transition: transform 0.1s ease-in-out;
-    }
-    button:active {
-      transform: scale(0.98);
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .noUi-handle {
-      background-color: #007bff !important;
-      border: none !important;
-    }
-    .noUi-connect {
-      background-color: #007bff !important;
-    }
-    .noUi-base {
-      background-color: #e5e5e5 !important;
-    }
-  </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.css" />
+
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #map { height: 400px; width: 100%; margin-bottom: 20px; }
+    .slider-container { margin: 15px 0; }
+    .slider-values { display: flex; justify-content: space-between; }
+    button { background-color: #007bff; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+  </style>
 </head>
 <body>
   <h1>Filtereinstellungen</h1>
   <div id="map"></div>
+
   <div class="slider-container">
     <label for="price-range">Preisbereich (€):</label>
     <div id="price-range"></div>
-    <div class="slider-values">
-      <span id="price-min">0</span>
-      <span id="price-max">3000</span>
-    </div>
+    <div class="slider-values"><span id="price-min">0</span><span id="price-max">3000</span></div>
   </div>
+
   <div class="slider-container">
     <label for="size-range">Größenbereich (m²):</label>
     <div id="size-range"></div>
-    <div class="slider-values">
-      <span id="size-min">10</span>
-      <span id="size-max">100</span>
-    </div>
+    <div class="slider-values"><span id="size-min">10</span><span id="size-max">100</span></div>
   </div>
+
   <label>
     <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
   </label>
+  
   <button id="save" style="margin-top: 15px">Filter speichern</button>
 
   <script>
@@ -99,51 +52,29 @@
 
     function applyTheme() {
       const theme = tg.themeParams;
-      document.body.style.setProperty("--bg-color", theme.bg_color || "white");
-      document.body.style.setProperty("--text-color", theme.text_color || "black");
-      document.querySelector("button").style.backgroundColor = theme.button_color || "#007bff";
-      document.querySelector("button").style.color = theme.button_text_color || "white";
+      document.body.style.backgroundColor = theme.bg_color || "white";
+      document.body.style.color = theme.text_color || "black";
     }
     applyTheme();
     Telegram.WebApp.onEvent('themeChanged', applyTheme);
 
     const map = L.map('map').setView([51.1657, 10.4515], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
-    const drawControl = new L.Control.Draw({
-      draw: {
-        polygon: true,
-        rectangle: true,
-        circle: true,
-        polyline: false,
-        marker: false
-      },
-      edit: {
-        featureGroup: drawnItems
-      }
-    });
-    map.addControl(drawControl);
+    map.addControl(new L.Control.Draw({
+      draw: { polygon: true, rectangle: true, circle: true, polyline: false, marker: false },
+      edit: { featureGroup: drawnItems }
+    }));
 
     map.on(L.Draw.Event.CREATED, function (event) {
-      const layer = event.layer;
-      drawnItems.clearLayers(); // Удаляем предыдущие области
-      drawnItems.addLayer(layer);
+      drawnItems.clearLayers();
+      drawnItems.addLayer(event.layer);
     });
 
-    L.control.locate({
-      position: 'topleft',
-      strings: { title: "Zeige mir meine Position" }
-    }).addTo(map);
-
-    map.locate({ setView: true, maxZoom: 16 });
-    map.on('locationerror', () => {
-      console.warn("Геолокация недоступна. Используется стандартное положение.");
-    });
+    L.control.locate({ position: 'topleft', strings: { title: "Zeige mir meine Position" } }).addTo(map);
 
     const priceSlider = document.getElementById('price-range');
     noUiSlider.create(priceSlider, { start: [1000, 3000], connect: true, range: { min: 0, max: 5000 } });
@@ -168,11 +99,12 @@
       };
 
       if (!filters.location) {
-        alert("Bitte wähle eine Zone auf der Karte aus!"); // Предупреждение
+        alert("Bitte wähle eine Zone auf der Karte aus!");
         return;
       }
 
-      tg.sendData(JSON.stringify(filters));
+      console.log("📤 Отправка данных в бота:", filters);  // ✅ Лог в консоль браузера
+      tg.sendData(JSON.stringify(filters));  // ✅ Отправка в бота
       tg.close();
     });
 
