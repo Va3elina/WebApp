@@ -92,10 +92,11 @@
     <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
   </label>
   <button id="save" style="margin-top: 15px">Filter speichern</button>
+
   <script>
     const tg = window.Telegram.WebApp;
-
     tg.expand();
+
     function applyTheme() {
       const theme = tg.themeParams;
       document.body.style.setProperty("--bg-color", theme.bg_color || "white");
@@ -104,7 +105,6 @@
       document.querySelector("button").style.color = theme.button_text_color || "white";
     }
     applyTheme();
-
     Telegram.WebApp.onEvent('themeChanged', applyTheme);
 
     const map = L.map('map').setView([51.1657, 10.4515], 6);
@@ -131,15 +131,13 @@
 
     map.on(L.Draw.Event.CREATED, function (event) {
       const layer = event.layer;
-      drawnItems.clearLayers();
+      drawnItems.clearLayers(); // Удаляем предыдущие области
       drawnItems.addLayer(layer);
     });
 
     L.control.locate({
       position: 'topleft',
-      strings: {
-        title: "Zeige mir meine Position"
-      }
+      strings: { title: "Zeige mir meine Position" }
     }).addTo(map);
 
     map.locate({ setView: true, maxZoom: 16 });
@@ -148,63 +146,48 @@
     });
 
     const priceSlider = document.getElementById('price-range');
-    noUiSlider.create(priceSlider, {
-      start: [1000, 3000],
-      connect: true,
-      range: { min: 0, max: 5000 }
-    });
+    noUiSlider.create(priceSlider, { start: [1000, 3000], connect: true, range: { min: 0, max: 5000 } });
     priceSlider.noUiSlider.on('update', values => {
       document.getElementById('price-min').textContent = Math.round(values[0]);
       document.getElementById('price-max').textContent = Math.round(values[1]);
     });
 
     const sizeSlider = document.getElementById('size-range');
-    noUiSlider.create(sizeSlider, {
-      start: [20, 100],
-      connect: true,
-      range: { min: 10, max: 200 }
-    });
+    noUiSlider.create(sizeSlider, { start: [20, 100], connect: true, range: { min: 10, max: 200 } });
     sizeSlider.noUiSlider.on('update', values => {
       document.getElementById('size-min').textContent = Math.round(values[0]);
       document.getElementById('size-max').textContent = Math.round(values[1]);
     });
 
-   document.getElementById('save').addEventListener('click', () => {
-  const filters = {
-    price: priceSlider.noUiSlider.get(),
-    size: sizeSlider.noUiSlider.get(),
-    temporary: document.getElementById('temporary').checked,
-    location: getSelectedArea() // Добавляем координаты выделенной области
-  };
+    document.getElementById('save').addEventListener('click', () => {
+      const filters = {
+        price: priceSlider.noUiSlider.get(),
+        size: sizeSlider.noUiSlider.get(),
+        temporary: document.getElementById('temporary').checked,
+        location: getSelectedArea()
+      };
 
-  tg.sendData(JSON.stringify(filters));  // Отправляем данные в бота
-  tg.close();
-});
+      if (!filters.location) {
+        alert("Bitte wähle eine Zone auf der Karte aus!"); // Предупреждение
+        return;
+      }
 
-// Функция для получения координат выделенной области
-function getSelectedArea() {
-  if (drawnItems.getLayers().length === 0) {
-    return null; // Если область не выбрана, передаем null
-  }
+      tg.sendData(JSON.stringify(filters));
+      tg.close();
+    });
 
-  const layer = drawnItems.getLayers()[0]; // Берем первую выделенную область
-
-  if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
-    // Если выделен полигон или прямоугольник, отправляем массив координат
-    return {
-      type: "polygon",
-      coordinates: layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng])
-    };
-  } else if (layer instanceof L.Circle) {
-    // Если выделена окружность, передаем центр и радиус
-    return {
-      type: "circle",
-      center: [layer.getLatLng().lat, layer.getLatLng().lng],
-      radius: layer.getRadius()
-    };
-  }
-  return null;
-}
+    function getSelectedArea() {
+      if (drawnItems.getLayers().length === 0) {
+        return null;
+      }
+      const layer = drawnItems.getLayers()[0];
+      if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+        return { type: "polygon", coordinates: layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng]) };
+      } else if (layer instanceof L.Circle) {
+        return { type: "circle", center: [layer.getLatLng().lat, layer.getLatLng().lng], radius: layer.getRadius() };
+      }
+      return null;
+    }
   </script>
 </body>
 </html>
