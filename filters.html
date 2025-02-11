@@ -33,13 +33,17 @@
       margin-top: 15px;
     }
     button {
-      background-color: #007bff;
-      color: white;
+      background-color: var(--button-color, #007bff);
+      color: var(--button-text-color, white);
       border: none;
       padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
       width: 100%;
+      transition: transform 0.1s ease-in-out;
+    }
+    button:active {
+      transform: scale(0.98);
     }
     button:hover {
       background-color: #0056b3;
@@ -92,16 +96,22 @@
     const tg = window.Telegram.WebApp;
 
     tg.expand();
-    const theme = tg.themeParams;
-    document.body.style.setProperty("--bg-color", theme.bg_color || "white");
-    document.body.style.setProperty("--text-color", theme.text_color || "black");
+    function applyTheme() {
+      const theme = tg.themeParams;
+      document.body.style.setProperty("--bg-color", theme.bg_color || "white");
+      document.body.style.setProperty("--text-color", theme.text_color || "black");
+      document.querySelector("button").style.backgroundColor = theme.button_color || "#007bff";
+      document.querySelector("button").style.color = theme.button_text_color || "white";
+    }
+    applyTheme();
+
+    Telegram.WebApp.onEvent('themeChanged', applyTheme);
 
     const map = L.map('map').setView([51.1657, 10.4515], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Добавляем инструменты рисования
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
@@ -125,7 +135,6 @@
       drawnItems.addLayer(layer);
     });
 
-    // Добавляем кнопку геолокации
     L.control.locate({
       position: 'topleft',
       strings: {
@@ -133,7 +142,11 @@
       }
     }).addTo(map);
 
-    // Инициализация noUiSlider для цены
+    map.locate({ setView: true, maxZoom: 16 });
+    map.on('locationerror', () => {
+      console.warn("Геолокация недоступна. Используется стандартное положение.");
+    });
+
     const priceSlider = document.getElementById('price-range');
     noUiSlider.create(priceSlider, {
       start: [1000, 3000],
@@ -163,6 +176,7 @@
         temporary: document.getElementById('temporary').checked
       };
       tg.sendData(JSON.stringify(filters));
+      tg.close();
     });
   </script>
 </body>
