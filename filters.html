@@ -169,15 +169,17 @@
       document.getElementById('size-max').textContent = Math.round(values[1]);
     });
 
-    document.getElementById('save').addEventListener('click', () => {
-      const filters = {
-        price: priceSlider.noUiSlider.get(),
-        size: sizeSlider.noUiSlider.get(),
-        temporary: document.getElementById('temporary').checked
-      };
-      tg.sendData(JSON.stringify(filters));
-      tg.close();
-    });
+   document.getElementById('save').addEventListener('click', () => {
+  const filters = {
+    price: priceSlider.noUiSlider.get(),
+    size: sizeSlider.noUiSlider.get(),
+    temporary: document.getElementById('temporary').checked
+  };
+
+  tg.sendData(JSON.stringify(filters));  // Отправляем данные боту
+  tg.close();
+});
+
   </script>
 </body>
 </html>
