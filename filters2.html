@@ -1,42 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-    <title>Telegram MiniApp</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Filtereinstellungen</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.js"></script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.6.1/nouislider.min.css" />
+
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #map { height: 400px; width: 100%; margin-bottom: 20px; }
+    .slider-container { margin: 15px 0; }
+    .slider-values { display: flex; justify-content: space-between; }
+    button { background-color: #007bff; color: white; padding: 10px; width: 100%; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background-color: #0056b3; }
+  </style>
 </head>
 <body>
-    <h1>Настройки фильтров</h1>
-    <button id="sendData">Отправить</button>
+  <h1>Filtereinstellungen</h1>
+  <div id="map"></div>
 
-    <script>
-        Telegram.WebApp.expand(); // Разворачиваем MiniApp
+  <div class="slider-container">
+    <label for="price-range">Preisbereich (€):</label>
+    <div id="price-range"></div>
+    <div class="slider-values"><span id="price-min">0</span><span id="price-max">3000</span></div>
+  </div>
 
-        document.getElementById("sendData").addEventListener("click", () => {
-            const initData = Telegram.WebApp.initData;
-            if (!initData) {
-                console.error("❌ Ошибка: Не удалось получить initData");
-                return;
-            }
+  <div class="slider-container">
+    <label for="size-range">Größenbereich (m²):</label>
+    <div id="size-range"></div>
+    <div class="slider-values"><span id="size-min">10</span><span id="size-max">100</span></div>
+  </div>
 
-            // Формируем JSON с фильтрами и initData
-            const data = {
-                initData: initData,
-                filters: { brightness: 50, contrast: 80 }
-            };
+  <label>
+    <input type="checkbox" id="temporary" checked> Zwischenmiete einbeziehen
+  </label>
+  
+  <button id="save" style="margin-top: 15px">Filter speichern</button>
 
-            // Отправляем данные через MiniApp API
-            Telegram.WebApp.sendData(JSON.stringify(data));
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-            // Альтернативно: можно использовать fetch()
-            fetch("http://127.0.0.1:8000/miniapp-data/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => console.log("✅ Ответ от сервера:", result))
-            .catch(error => console.error("❌ Ошибка при отправке данных:", error));
-        });
-    </script>
+    function applyTheme() {
+      const theme = tg.themeParams;
+      document.body.style.backgroundColor = theme.bg_color || "white";
+      document.body.style.color = theme.text_color || "black";
+    }
+    applyTheme();
+    Telegram.WebApp.onEvent('themeChanged', applyTheme);
+
+    const map = L.map('map').setView([51.1657, 10.4515], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    map.addControl(new L.Control.Draw({
+      draw: { polygon: true, rectangle: true, circle: true, polyline: false, marker: false },
+      edit: { featureGroup: drawnItems }
+    }));
+
+    map.on(L.Draw.Event.CREATED, function (event) {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(event.layer);
+    });
+
+    L.control.locate({ position: 'topleft', strings: { title: "Zeige mir meine Position" } }).addTo(map);
+
+    const priceSlider = document.getElementById('price-range');
+    noUiSlider.create(priceSlider, { start: [1000, 3000], connect: true, range: { min: 0, max: 5000 } });
+    priceSlider.noUiSlider.on('update', values => {
+      document.getElementById('price-min').textContent = Math.round(values[0]);
+      document.getElementById('price-max').textContent = Math.round(values[1]);
+    });
+
+    const sizeSlider = document.getElementById('size-range');
+    noUiSlider.create(sizeSlider, { start: [20, 100], connect: true, range: { min: 10, max: 200 } });
+    sizeSlider.noUiSlider.on('update', values => {
+      document.getElementById('size-min').textContent = Math.round(values[0]);
+      document.getElementById('size-max').textContent = Math.round(values[1]);
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      const filters = {
+        price: priceSlider.noUiSlider.get(),
+        size: sizeSlider.noUiSlider.get(),
+        temporary: document.getElementById('temporary').checked,
+        location: getSelectedArea()
+      };
+
+      if (!filters.location) {
+        alert("Bitte wähle eine Zone auf der Karte aus!");
+        return;
+      }
+
+      console.log("📤 Отправка данных в бота:", filters);  // ✅ Лог в консоль браузера
+      tg.sendData(JSON.stringify(filters));  // ✅ Отправка в бота
+      tg.close();
+    });
+
+    function getSelectedArea() {
+      if (drawnItems.getLayers().length === 0) {
+        return null;
+      }
+      const layer = drawnItems.getLayers()[0];
+      if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+        return { type: "polygon", coordinates: layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng]) };
+      } else if (layer instanceof L.Circle) {
+        return { type: "circle", center: [layer.getLatLng().lat, layer.getLatLng().lng], radius: layer.getRadius() };
+      }
+      return null;
+    }
+  </script>
 </body>
 </html>
