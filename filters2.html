@@ -9,55 +9,54 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
 
   <!-- Стили -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
- 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
 
-<style>
-  body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
-  #map { height: 400px; width: 100%; margin-bottom: 20px; }
-  .input-range { margin: 15px 0; }
-  .range-row { display: flex; align-items: center; gap: 8px; }
-  .range-row input[type="number"] {
-    flex: 1; padding: 8px; border: 1px solid #ccc;
-    border-radius: 12px; background: #f5f5f5;
-  }
-  button {
-    background-color: #007bff; color: white; padding: 10px;
-    width: 100%; border: none; border-radius: 5px; cursor: pointer;
-  }
-  button:hover { background-color: #0056b3; }
-  input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
-  .suggestions {
-    position: relative;
-    background: white;
-    border: 1px solid #ccc;
-    border-top: none;
-    max-height: 150px;
-    overflow-y: auto;
-    z-index: 1000;
-  }
-  .suggestion {
-    padding: 8px;
-    cursor: pointer;
-  }
-  .suggestion:hover {
-    background-color: #eee;
-  }
-  label {
-    display: block;
-    margin-bottom: 5px;
-  }
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
+    #map { height: 400px; width: 100%; margin-bottom: 20px; }
+    .input-range { margin: 15px 0; }
+    .range-row { display: flex; align-items: center; gap: 8px; }
+    .range-row input[type="number"] {
+      flex: 1; padding: 8px; border: 1px solid #ccc;
+      border-radius: 12px; background: #f5f5f5;
+    }
+    button {
+      background-color: #007bff; color: white; padding: 10px;
+      width: 100%; border: none; border-radius: 5px; cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+    .suggestions {
+      position: relative;
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    .suggestion {
+      padding: 8px;
+      cursor: pointer;
+    }
+    .suggestion:hover {
+      background-color: #eee;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
 
-  /* 🔧 Умное скрытие лишней кнопки круга */
-  .leaflet-draw-toolbar a[title="Draw a circle"]:nth-child(2) {
-    display: none !important;
-  }
-</style>
-
+    /* Убрать лишнюю кнопку "circle marker" */
+    .leaflet-draw-toolbar a[title="Draw a circle marker"] {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
 <h1>Filtereinstellungen</h1>
@@ -155,18 +154,31 @@
       rectangle: false,
       circle: true,
       polyline: false,
-      marker: false
+      marker: false,
+      circlemarker: false
     },
     edit: {
       featureGroup: drawnItems
     }
   }));
 
+  // ✅ Добавляем Locate-кнопку
+  L.control.locate({
+    position: 'topleft',
+    strings: {
+      title: "Zeige mir meine Position"
+    },
+    flyTo: true
+  }).addTo(map);
+
   map.on(L.Draw.Event.CREATED, function (event) {
-    drawnItems.clearLayers();
+    drawnItems.eachLayer(layer => {
+      if (layer instanceof L.Circle) {
+        drawnItems.removeLayer(layer);
+      }
+    });
     drawnItems.addLayer(event.layer);
   });
-
 
   function getSelectedArea() {
     if (drawnItems.getLayers().length === 0) return null;
@@ -248,7 +260,6 @@
       });
   }
 
-  // 🔄 Автоматический поиск при нажатии Enter в поле города
   document.getElementById("city").addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -256,7 +267,6 @@
     }
   });
 
-  // 📤 Отправка данных в Telegram-бота
   document.getElementById("save").addEventListener("click", () => {
     const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
     const filters = {
