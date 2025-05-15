@@ -193,17 +193,33 @@
     const location = getSelectedAreaOrCityFallback();
     const city = document.getElementById("city").value.trim();
     if (!location) return alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus!");
+
+    // Обрабатываем цену
+    const priceMin = document.getElementById('price-min').value;
+    const priceMax = document.getElementById('price-max').value;
+    const price = priceMin || priceMax ? [
+      parseInt(priceMin || '0'),
+      parseInt(priceMax || '100000')
+    ] : null;
+
+    // Обрабатываем площадь
+    const sizeMin = document.getElementById('size-min').value;
+    const sizeMax = document.getElementById('size-max').value;
+    const size = sizeMin || sizeMax ? [
+      parseInt(sizeMin || '0'),
+      parseInt(sizeMax || '1000')
+    ] : null;
+
+    if (selectedWebsites.length === 0) {
+      alert("Bitte wähle mindestens eine Website aus!");
+      return;
+    }
+
     const filters = {
       city,
       radius: parseInt(document.getElementById("radius").value || "10"),
-      price: [
-        parseInt(document.getElementById('price-min').value || '0'),
-        parseInt(document.getElementById('price-max').value || '100000')
-      ],
-      size: [
-        parseInt(document.getElementById('size-min').value || '0'),
-        parseInt(document.getElementById('size-max').value || '1000')
-      ],
+      price,
+      size,
       tauschwohnung: document.getElementById('tauschwohnung').checked,
       wbs: document.getElementById('wbs').checked,
       location,
