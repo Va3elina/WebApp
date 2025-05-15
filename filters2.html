@@ -118,23 +118,48 @@
   applyTheme();
 
   const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
   const map = L.map('map').setView([51.1657, 10.4515], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
   const drawnItems = new L.FeatureGroup();
   map.addLayer(drawnItems);
-  map.addControl(new L.Control.Draw({
-    draw: { polygon: false, rectangle: false, circle: true, polyline: false, marker: false, circlemarker: false },
-    edit: { featureGroup: drawnItems }
-  }));
+
+  if (isIOS) {
+    alert("📱 Auf iPhones kannst du einen Kreisbereich durch Tippen auf die Karte auswählen.");
+    map.on("click", (e) => {
+      const radiusKm = parseInt(document.getElementById("radius").value || "10");
+      const radiusMeters = radiusKm * 1000;
+      drawnItems.clearLayers();
+      const circle = L.circle(e.latlng, { radius: radiusMeters, color: '#3388ff' });
+      drawnItems.addLayer(circle);
+      map.fitBounds(circle.getBounds());
+    });
+  } else {
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polygon: false,
+        rectangle: false,
+        circle: true,
+        polyline: false,
+        marker: false,
+        circlemarker: false
+      },
+      edit: { featureGroup: drawnItems }
+    });
+    map.addControl(drawControl);
+    map.on(L.Draw.Event.CREATED, e => {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(e.layer);
+    });
+  }
+
   L.control.locate({
     position: 'topleft',
     strings: { title: "Zeige mir meine Position" },
     flyTo: true
   }).addTo(map);
-  map.on(L.Draw.Event.CREATED, e => {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(e.layer);
-  });
 
   function normalize(str) {
     return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
@@ -151,7 +176,6 @@
   function updateCircleAndZoom(lat, lon) {
     const radiusKm = parseInt(document.getElementById("radius").value || "10");
     const radiusMeters = radiusKm * 1000;
-
     const circle = L.circle([lat, lon], { radius: radiusMeters, color: '#3388ff' });
     drawnItems.clearLayers();
     drawnItems.addLayer(circle);
@@ -183,6 +207,7 @@
     if (e.key === "Enter") {
       e.preventDefault();
       searchCity();
+      e.target.blur(); // Закрыть клавиатуру на iOS
     }
   });
 
@@ -255,5 +280,6 @@
     tg.close();
   });
 </script>
+
 </body>
 </html>
