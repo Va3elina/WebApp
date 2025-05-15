@@ -16,44 +16,48 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
  
 
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
-    #map { height: 400px; width: 100%; margin-bottom: 20px; }
-    .input-range { margin: 15px 0; }
-    .range-row { display: flex; align-items: center; gap: 8px; }
-    .range-row input[type="number"] {
-      flex: 1; padding: 8px; border: 1px solid #ccc;
-      border-radius: 12px; background: #f5f5f5;
-    }
-    button {
-      background-color: #007bff; color: white; padding: 10px;
-      width: 100%; border: none; border-radius: 5px; cursor: pointer;
-    }
-    button:hover { background-color: #0056b3; }
-    input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
+  #map { height: 400px; width: 100%; margin-bottom: 20px; }
+  .input-range { margin: 15px 0; }
+  .range-row { display: flex; align-items: center; gap: 8px; }
+  .range-row input[type="number"] {
+    flex: 1; padding: 8px; border: 1px solid #ccc;
+    border-radius: 12px; background: #f5f5f5;
+  }
+  button {
+    background-color: #007bff; color: white; padding: 10px;
+    width: 100%; border: none; border-radius: 5px; cursor: pointer;
+  }
+  button:hover { background-color: #0056b3; }
+  input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+  .suggestions {
+    position: relative;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  .suggestion {
+    padding: 8px;
+    cursor: pointer;
+  }
+  .suggestion:hover {
+    background-color: #eee;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
 
-    .suggestions {
-      position: relative;
-      background: white;
-      border: 1px solid #ccc;
-      border-top: none;
-      max-height: 150px;
-      overflow-y: auto;
-      z-index: 1000;
-    }
-    .suggestion {
-      padding: 8px;
-      cursor: pointer;
-    }
-    .suggestion:hover {
-      background-color: #eee;
-    }
+  /* 🔧 Умное скрытие лишней кнопки круга */
+  .leaflet-draw-toolbar a[title="Draw a circle"]:nth-child(2) {
+    display: none !important;
+  }
+</style>
 
-    label {
-      display: block;
-      margin-bottom: 5px;
-    }
-  </style>
 </head>
 <body>
 <h1>Filtereinstellungen</h1>
