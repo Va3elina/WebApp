@@ -163,12 +163,6 @@
     drawnItems.addLayer(event.layer);
   });
 
-  L.control.locate({
-    position: 'topleft',
-    strings: {
-      title: "Zeige mir meine Position"
-    }
-  }).addTo(map);
 
   function getSelectedArea() {
     if (drawnItems.getLayers().length === 0) return null;
