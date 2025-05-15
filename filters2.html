@@ -107,45 +107,20 @@
     document.body.style.color = theme.text_color || "black";
   }
   applyTheme();
-  Telegram.WebApp.onEvent('themeChanged', applyTheme);
+  tg.onEvent('themeChanged', applyTheme);
 
-  const map = L.map('map').setView([51.1657, 10.4515], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-  const drawnItems = new L.FeatureGroup();
-  map.addLayer(drawnItems);
-
-  map.addControl(new L.Control.Draw({
-    draw: { polygon: true, rectangle: true, circle: true, polyline: false, marker: false },
-    edit: { featureGroup: drawnItems }
-  }));
-
-  map.on(L.Draw.Event.CREATED, function (event) {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(event.layer);
-  });
-
-  L.control.locate({ position: 'topleft', strings: { title: "Zeige mir meine Position" } }).addTo(map);
-
-  function getSelectedArea() {
-    if (drawnItems.getLayers().length === 0) return null;
-    const layer = drawnItems.getLayers()[0];
-    if (layer instanceof L.Polygon || layer instanceof L.Rectangle)
-      return { type: "polygon", coordinates: layer.getLatLngs()[0].map(coord => [coord.lat, coord.lng]) };
-    else if (layer instanceof L.Circle)
-      return { type: "circle", center: [layer.getLatLng().lat, layer.getLatLng().lng], radius: layer.getRadius() };
-    return null;
-  }
+  const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
+  let debounceTimer;
 
   function normalize(str) {
     return str
-            .replace(/ae/g, "ä")
-            .replace(/oe/g, "ö")
-            .replace(/ue/g, "ü")
-            .replace(/ss/g, "ß")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
+      .replace(/ae/g, "ä")
+      .replace(/oe/g, "ö")
+      .replace(/ue/g, "ü")
+      .replace(/ss/g, "ß")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
   }
 
   const inputAliasMap = {
@@ -161,8 +136,53 @@
     "brunswick": "braunschweig"
   };
 
-  // Автоподсказка
-  let debounceTimer;
+  const map = L.map('map').setView([51.1657, 10.4515], 6);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const drawnItems = new L.FeatureGroup();
+  map.addLayer(drawnItems);
+
+  map.addControl(new L.Control.Draw({
+    draw: {
+      polygon: false,
+      rectangle: false,
+      circle: true,
+      polyline: false,
+      marker: false
+    },
+    edit: {
+      featureGroup: drawnItems
+    }
+  }));
+
+  map.on(L.Draw.Event.CREATED, function (event) {
+    drawnItems.clearLayers();
+    drawnItems.addLayer(event.layer);
+  });
+
+  L.control.locate({
+    position: 'topleft',
+    strings: {
+      title: "Zeige mir meine Position"
+    }
+  }).addTo(map);
+
+  function getSelectedArea() {
+    if (drawnItems.getLayers().length === 0) return null;
+    const layer = drawnItems.getLayers()[0];
+    if (layer instanceof L.Circle) {
+      return {
+        type: "circle",
+        center: [layer.getLatLng().lat, layer.getLatLng().lng],
+        radius: layer.getRadius()
+      };
+    }
+    return null;
+  }
+
   document.getElementById("city").addEventListener("input", function () {
     clearTimeout(debounceTimer);
     let query = this.value.trim();
@@ -174,35 +194,37 @@
     }
 
     debounceTimer = setTimeout(() => {
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=de&addressdetails=1&limit=10&q=${encodeURIComponent(query)}`)
-              .then(res => res.json())
-              .then(data => {
-                const container = document.getElementById("city-suggestions");
-                container.innerHTML = "";
-                const shown = new Set();
+      fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("city-suggestions");
+          container.innerHTML = "";
+          const shown = new Set();
 
-                data.forEach(item => {
-                  const city = item.address.city || item.address.town || item.address.village || item.address.municipality;
-                  if (!city || item.address.country !== "Germany") return;
-                  const cityNorm = normalize(city);
-                  if (shown.has(cityNorm)) return;
-                  shown.add(cityNorm);
+          data.features.forEach(feature => {
+            const city = feature.properties.city || feature.properties.town || feature.properties.village;
+            if (!city) return;
 
-                  const div = document.createElement("div");
-                  div.className = "suggestion";
-                  div.textContent = city;
-                  div.addEventListener("click", () => {
-                    document.getElementById("city").value = city;
-                    container.innerHTML = "";
-                    map.setView([parseFloat(item.lat), parseFloat(item.lon)], 13);
-                  });
-                  container.appendChild(div);
-                });
+            const cityNorm = normalize(city);
+            if (shown.has(cityNorm)) return;
+            shown.add(cityNorm);
 
-                if (container.innerHTML === "") {
-                  container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
-                }
-              });
+            const div = document.createElement("div");
+            div.className = "suggestion";
+            div.textContent = city;
+            div.addEventListener("click", () => {
+              document.getElementById("city").value = city;
+              container.innerHTML = "";
+              const [lon, lat] = feature.geometry.coordinates;
+              map.setView([lat, lon], 13);
+            });
+            container.appendChild(div);
+          });
+
+          if (container.innerHTML === "") {
+            container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
+          }
+        });
     }, 300);
   });
 
@@ -211,24 +233,33 @@
     const normalized = normalize(inputCity);
     if (inputAliasMap[normalized]) inputCity = inputAliasMap[normalized];
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=de&addressdetails=1&limit=10&q=${encodeURIComponent(inputCity)}`)
-            .then(res => res.json())
-            .then(data => {
-              const match = data.find(item => {
-                const resultCity = item.address.city || item.address.town || item.address.village || item.address.municipality;
-                return resultCity && item.address.country === "Germany" &&
-                        normalize(resultCity) === normalize(inputCity);
-              });
+    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(inputCity)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+      .then(res => res.json())
+      .then(data => {
+        const match = data.features.find(feature => {
+          const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
+          return resultCity && normalize(resultCity) === normalize(inputCity);
+        });
 
-              if (match) {
-                map.setView([parseFloat(match.lat), parseFloat(match.lon)], 13);
-              } else {
-                alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
-              }
-            });
+        if (match) {
+          const [lon, lat] = match.geometry.coordinates;
+          map.setView([lat, lon], 13);
+        } else {
+          alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
+        }
+      });
   }
 
-  document.getElementById('save').addEventListener('click', () => {
+  // 🔄 Автоматический поиск при нажатии Enter в поле города
+  document.getElementById("city").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      searchCity();
+    }
+  });
+
+  // 📤 Отправка данных в Telegram-бота
+  document.getElementById("save").addEventListener("click", () => {
     const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
     const filters = {
       city: document.getElementById("city").value.trim(),
@@ -246,11 +277,13 @@
       websites: selectedWebsites
     };
 
+    if (!filters.city) return alert("Bitte gib eine Stadt ein!");
     if (!filters.location) return alert("Bitte wähle eine Zone auf der Karte aus!");
+
+    console.log("📤 Отправка данных в бота:", filters);
     tg.sendData(JSON.stringify(filters));
     tg.close();
   });
-
 </script>
 </body>
 </html>
