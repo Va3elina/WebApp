@@ -51,8 +51,6 @@
       display: block;
       margin-bottom: 5px;
     }
-
-    /* Убрать лишнюю кнопку "circle marker" */
     .leaflet-draw-toolbar a[title="Draw a circle marker"] {
       display: none !important;
     }
@@ -61,8 +59,16 @@
 <body>
 <h1>Filtereinstellungen</h1>
 
-<label for="city">Stadt:</label>
-<input type="text" id="city" placeholder="z.B. Berlin">
+<div style="display: flex; gap: 8px; align-items: center;">
+  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1;">
+  <select id="radius" style="padding: 6px; border-radius: 8px;">
+    <option value="5">5 km</option>
+    <option value="10" selected>10 km</option>
+    <option value="15">15 km</option>
+    <option value="20">20 km</option>
+    <option value="30">30 km</option>
+  </select>
+</div>
 <div id="city-suggestions" class="suggestions"></div>
 <button onclick="searchCity()">Karte aktualisieren</button>
 
@@ -103,140 +109,33 @@
 <script>
   const tg = window.Telegram.WebApp;
   tg.expand();
-
+  tg.onEvent('themeChanged', applyTheme);
   function applyTheme() {
     const theme = tg.themeParams;
     document.body.style.backgroundColor = theme.bg_color || "white";
     document.body.style.color = theme.text_color || "black";
   }
   applyTheme();
-  tg.onEvent('themeChanged', applyTheme);
 
   const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
-  let debounceTimer;
+  const map = L.map('map').setView([51.1657, 10.4515], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  const drawnItems = new L.FeatureGroup();
+  map.addLayer(drawnItems);
+  map.addControl(new L.Control.Draw({ draw: { polygon: false, rectangle: false, circle: true, polyline: false, marker: false, circlemarker: false }, edit: { featureGroup: drawnItems } }));
+  L.control.locate({ position: 'topleft', strings: { title: "Zeige mir meine Position" }, flyTo: true }).addTo(map);
+  map.on(L.Draw.Event.CREATED, e => { drawnItems.clearLayers(); drawnItems.addLayer(e.layer); });
 
   function normalize(str) {
-    return str
-      .replace(/ae/g, "ä")
-      .replace(/oe/g, "ö")
-      .replace(/ue/g, "ü")
-      .replace(/ss/g, "ß")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
+    return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
 
   const inputAliasMap = {
-    "koeln": "köln",
-    "koln": "köln",
-    "cologne": "köln",
-    "muenchen": "münchen",
-    "munchen": "münchen",
-    "munich": "münchen",
-    "nuernberg": "nürnberg",
-    "nurnberg": "nürnberg",
-    "nuremberg": "nürnberg",
+    "koeln": "köln", "koln": "köln", "cologne": "köln",
+    "muenchen": "münchen", "munchen": "münchen", "munich": "münchen",
+    "nuernberg": "nürnberg", "nurnberg": "nürnberg", "nuremberg": "nürnberg",
     "brunswick": "braunschweig"
   };
-
-  const map = L.map('map').setView([51.1657, 10.4515], 6);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  const drawnItems = new L.FeatureGroup();
-  map.addLayer(drawnItems);
-
-  map.addControl(new L.Control.Draw({
-    draw: {
-      polygon: false,
-      rectangle: false,
-      circle: true,
-      polyline: false,
-      marker: false,
-      circlemarker: false
-    },
-    edit: {
-      featureGroup: drawnItems
-    }
-  }));
-
-  // ✅ Добавляем Locate-кнопку
-  L.control.locate({
-    position: 'topleft',
-    strings: {
-      title: "Zeige mir meine Position"
-    },
-    flyTo: true
-  }).addTo(map);
-
-  map.on(L.Draw.Event.CREATED, function (event) {
-    drawnItems.eachLayer(layer => {
-      if (layer instanceof L.Circle) {
-        drawnItems.removeLayer(layer);
-      }
-    });
-    drawnItems.addLayer(event.layer);
-  });
-
-  function getSelectedArea() {
-    if (drawnItems.getLayers().length === 0) return null;
-    const layer = drawnItems.getLayers()[0];
-    if (layer instanceof L.Circle) {
-      return {
-        type: "circle",
-        center: [layer.getLatLng().lat, layer.getLatLng().lng],
-        radius: layer.getRadius()
-      };
-    }
-    return null;
-  }
-
-  document.getElementById("city").addEventListener("input", function () {
-    clearTimeout(debounceTimer);
-    let query = this.value.trim();
-    const normalized = normalize(query);
-    if (inputAliasMap[normalized]) query = inputAliasMap[normalized];
-    if (query.length < 2) {
-      document.getElementById("city-suggestions").innerHTML = "";
-      return;
-    }
-
-    debounceTimer = setTimeout(() => {
-      fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
-        .then(res => res.json())
-        .then(data => {
-          const container = document.getElementById("city-suggestions");
-          container.innerHTML = "";
-          const shown = new Set();
-
-          data.features.forEach(feature => {
-            const city = feature.properties.city || feature.properties.town || feature.properties.village;
-            if (!city) return;
-
-            const cityNorm = normalize(city);
-            if (shown.has(cityNorm)) return;
-            shown.add(cityNorm);
-
-            const div = document.createElement("div");
-            div.className = "suggestion";
-            div.textContent = city;
-            div.addEventListener("click", () => {
-              document.getElementById("city").value = city;
-              container.innerHTML = "";
-              const [lon, lat] = feature.geometry.coordinates;
-              map.setView([lat, lon], 13);
-            });
-            container.appendChild(div);
-          });
-
-          if (container.innerHTML === "") {
-            container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
-          }
-        });
-    }, 300);
-  });
 
   function searchCity() {
     let inputCity = document.getElementById("city").value.trim();
@@ -250,27 +149,53 @@
           const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
           return resultCity && normalize(resultCity) === normalize(inputCity);
         });
-
         if (match) {
           const [lon, lat] = match.geometry.coordinates;
           map.setView([lat, lon], 13);
+
+          // Добавляем круг сразу после перемещения карты
+          drawnItems.clearLayers();
+          const radius = parseInt(document.getElementById("radius").value || "10") * 1000;
+          const circle = L.circle([lat, lon], { radius: radius, color: '#3388ff' });
+          drawnItems.addLayer(circle);
         } else {
           alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
         }
       });
   }
 
-  document.getElementById("city").addEventListener("keydown", function (e) {
+  document.getElementById("city").addEventListener("keydown", e => {
     if (e.key === "Enter") {
       e.preventDefault();
       searchCity();
     }
   });
 
+  function getSelectedAreaOrCityFallback() {
+    const layer = drawnItems.getLayers()[0];
+    if (layer instanceof L.Circle) {
+      return { type: "circle", center: [layer.getLatLng().lat, layer.getLatLng().lng], radius: layer.getRadius() };
+    }
+    const cityInput = document.getElementById("city").value.trim();
+    const center = map.getCenter();
+    const radius = parseInt(document.getElementById("radius").value || "10") * 1000;
+    if (cityInput && center) {
+      drawnItems.clearLayers();
+      const circle = L.circle([center.lat, center.lng], { radius: radius, color: '#3388ff' });
+      drawnItems.addLayer(circle);
+      return { type: "circle", center: [center.lat, center.lng], radius: radius };
+    }
+    return null;
+  }
+
   document.getElementById("save").addEventListener("click", () => {
     const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
+    const location = getSelectedAreaOrCityFallback();
+    const city = document.getElementById("city").value.trim();
+    if (!location) return alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus!");
     const filters = {
-      city: document.getElementById("city").value.trim(),
+      city,
+      radius: parseInt(document.getElementById("radius").value || "10"),
       price: [
         parseInt(document.getElementById('price-min').value || '0'),
         parseInt(document.getElementById('price-max').value || '100000')
@@ -281,13 +206,9 @@
       ],
       tauschwohnung: document.getElementById('tauschwohnung').checked,
       wbs: document.getElementById('wbs').checked,
-      location: getSelectedArea(),
+      location,
       websites: selectedWebsites
     };
-
-    if (!filters.city) return alert("Bitte gib eine Stadt ein!");
-    if (!filters.location) return alert("Bitte wähle eine Zone auf der Karte aus!");
-
     console.log("📤 Отправка данных в бота:", filters);
     tg.sendData(JSON.stringify(filters));
     tg.close();
