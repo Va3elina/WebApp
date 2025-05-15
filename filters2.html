@@ -122,20 +122,41 @@
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   const drawnItems = new L.FeatureGroup();
   map.addLayer(drawnItems);
-  map.addControl(new L.Control.Draw({ draw: { polygon: false, rectangle: false, circle: true, polyline: false, marker: false, circlemarker: false }, edit: { featureGroup: drawnItems } }));
-  L.control.locate({ position: 'topleft', strings: { title: "Zeige mir meine Position" }, flyTo: true }).addTo(map);
-  map.on(L.Draw.Event.CREATED, e => { drawnItems.clearLayers(); drawnItems.addLayer(e.layer); });
+  map.addControl(new L.Control.Draw({
+    draw: { polygon: false, rectangle: false, circle: true, polyline: false, marker: false, circlemarker: false },
+    edit: { featureGroup: drawnItems }
+  }));
+  L.control.locate({
+    position: 'topleft',
+    strings: { title: "Zeige mir meine Position" },
+    flyTo: true
+  }).addTo(map);
+  map.on(L.Draw.Event.CREATED, e => {
+    drawnItems.clearLayers();
+    drawnItems.addLayer(e.layer);
+  });
 
   function normalize(str) {
-    return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
 
   const inputAliasMap = {
     "koeln": "köln", "koln": "köln", "cologne": "köln",
-    "muenchen": "münchen", "munchen": "münchen", "munich": "münchen",
-    "nuernberg": "nürnberg", "nurnberg": "nürnberg", "nuremberg": "nürnberg",
+    "muenchen": "münchen", "munich": "münchen",
+    "nuernberg": "nürnberg", "nuremberg": "nürnberg",
     "brunswick": "braunschweig"
   };
+
+  function updateCircleAndZoom(lat, lon) {
+    const radiusKm = parseInt(document.getElementById("radius").value || "10");
+    const radiusMeters = radiusKm * 1000;
+
+    const circle = L.circle([lat, lon], { radius: radiusMeters, color: '#3388ff' });
+    drawnItems.clearLayers();
+    drawnItems.addLayer(circle);
+    map.fitBounds(circle.getBounds());
+  }
 
   function searchCity() {
     let inputCity = document.getElementById("city").value.trim();
@@ -151,13 +172,7 @@
         });
         if (match) {
           const [lon, lat] = match.geometry.coordinates;
-          map.setView([lat, lon], 13);
-
-          // Добавляем круг сразу после перемещения карты
-          drawnItems.clearLayers();
-          const radius = parseInt(document.getElementById("radius").value || "10") * 1000;
-          const circle = L.circle([lat, lon], { radius: radius, color: '#3388ff' });
-          drawnItems.addLayer(circle);
+          updateCircleAndZoom(lat, lon);
         } else {
           alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
         }
@@ -171,10 +186,22 @@
     }
   });
 
+  document.getElementById("radius").addEventListener("change", () => {
+    const layer = drawnItems.getLayers()[0];
+    if (layer instanceof L.Circle) {
+      const latlng = layer.getLatLng();
+      updateCircleAndZoom(latlng.lat, latlng.lng);
+    }
+  });
+
   function getSelectedAreaOrCityFallback() {
     const layer = drawnItems.getLayers()[0];
     if (layer instanceof L.Circle) {
-      return { type: "circle", center: [layer.getLatLng().lat, layer.getLatLng().lng], radius: layer.getRadius() };
+      return {
+        type: "circle",
+        center: [layer.getLatLng().lat, layer.getLatLng().lng],
+        radius: layer.getRadius()
+      };
     }
     const cityInput = document.getElementById("city").value.trim();
     const center = map.getCenter();
@@ -194,7 +221,6 @@
     const city = document.getElementById("city").value.trim();
     if (!location) return alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus!");
 
-    // Обрабатываем цену
     const priceMin = document.getElementById('price-min').value;
     const priceMax = document.getElementById('price-max').value;
     const price = priceMin || priceMax ? [
@@ -202,7 +228,6 @@
       parseInt(priceMax || '100000')
     ] : null;
 
-    // Обрабатываем площадь
     const sizeMin = document.getElementById('size-min').value;
     const sizeMax = document.getElementById('size-max').value;
     const size = sizeMin || sizeMax ? [
