@@ -60,8 +60,8 @@
 <h1>Filtereinstellungen</h1>
 
 <div style="display: flex; gap: 8px; align-items: center;">
-  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1;">
-  <select id="radius" style="padding: 6px; border-radius: 8px;">
+  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1; padding: 8px; border-radius: 12px; border: 1px solid #ccc; background: #f5f5f5;">
+  <select id="radius" style="width: 100px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
     <option value="5">5 km</option>
     <option value="10" selected>10 km</option>
     <option value="15">15 km</option>
@@ -126,7 +126,7 @@
   const drawnItems = new L.FeatureGroup();
   map.addLayer(drawnItems);
 
-  if (isIOS) {
+  /*if (isIOS) {
     alert("📱 Auf iPhones kannst du einen Kreisbereich durch Tippen auf die Karte auswählen.");
     map.on("click", (e) => {
       const radiusKm = parseInt(document.getElementById("radius").value || "10");
@@ -136,10 +136,10 @@
       drawnItems.addLayer(circle);
       map.fitBounds(circle.getBounds());
     });
-  } else {
+  } else {*/
     const drawControl = new L.Control.Draw({
       draw: {
-        polygon: false,
+        polygon: true,
         rectangle: false,
         circle: true,
         polyline: false,
@@ -153,7 +153,7 @@
       drawnItems.clearLayers();
       drawnItems.addLayer(e.layer);
     });
-  }
+  //}
 
   L.control.locate({
     position: 'topleft',
@@ -163,7 +163,7 @@
 
   function normalize(str) {
     return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   }
 
   const inputAliasMap = {
@@ -188,19 +188,19 @@
     if (inputAliasMap[normalized]) inputCity = inputAliasMap[normalized];
 
     fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(inputCity)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
-      .then(res => res.json())
-      .then(data => {
-        const match = data.features.find(feature => {
-          const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
-          return resultCity && normalize(resultCity) === normalize(inputCity);
-        });
-        if (match) {
-          const [lon, lat] = match.geometry.coordinates;
-          updateCircleAndZoom(lat, lon);
-        } else {
-          alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
-        }
-      });
+            .then(res => res.json())
+            .then(data => {
+              const match = data.features.find(feature => {
+                const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
+                return resultCity && normalize(resultCity) === normalize(inputCity);
+              });
+              if (match) {
+                const [lon, lat] = match.geometry.coordinates;
+                updateCircleAndZoom(lat, lon);
+              } else {
+                alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
+              }
+            });
   }
 
   document.getElementById("city").addEventListener("keydown", e => {
