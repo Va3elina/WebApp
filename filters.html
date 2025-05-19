@@ -38,27 +38,31 @@
       /* Для темной темы Telegram: */
       caret-color: black;
     }
-    /* Стили для выпадающего списка подсказок */
+
+    /* Стили для выпадающего списка подсказок с CSS-переменными */
     .suggestions {
       position: relative;
-      background: #f5f5f5 !important; /* светлый фон */
-      color: #000 !important; /* чёрный текст */
+      background: var(--suggestion-bg, #f5f5f5);
+      color: var(--suggestion-color, #000);
       border: 1px solid #ccc;
       border-top: none;
       max-height: 150px;
       overflow-y: auto;
       z-index: 1000;
+      border-radius: 0 0 12px 12px;
     }
     .suggestion {
       padding: 8px;
       cursor: pointer;
-      color: #000 !important;
-      background-color: #f5f5f5 !important;
+      color: var(--suggestion-color, #000);
+      background-color: var(--suggestion-bg, #f5f5f5);
+      user-select: none;
     }
     .suggestion:hover {
-      background-color: #ddd !important;
-      color: #000 !important;
+      background-color: var(--suggestion-hover-bg, #ddd);
+      color: var(--suggestion-color, #000);
     }
+
     label {
       display: block;
       margin-bottom: 5px;
@@ -72,7 +76,7 @@
 <h1>Filtereinstellungen</h1>
 
 <div style="display: flex; gap: 8px; align-items: center;">
-  <input type="text" id="city" placeholder="z.B. Berlin">
+  <input type="text" id="city" placeholder="z.B. Berlin" autocomplete="off">
   <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
     <option value="5">5 km</option>
     <option value="10" selected>10 km</option>
@@ -124,11 +128,50 @@
   const tg = window.Telegram.WebApp;
   tg.expand();
   tg.onEvent('themeChanged', applyTheme);
+
   function applyTheme() {
     const theme = tg.themeParams;
     document.body.style.backgroundColor = theme.bg_color || "white";
     document.body.style.color = theme.text_color || "black";
+
+    // Проверка яркости фона для определения темной темы
+    const bgColor = theme.bg_color || "#ffffff";
+    const isDark = (function(color) {
+      if (color[0] === '#') {
+        const r = parseInt(color.substr(1,2),16);
+        const g = parseInt(color.substr(3,2),16);
+        const b = parseInt(color.substr(5,2),16);
+        const brightness = (r*299 + g*587 + b*114) / 1000;
+        return brightness < 128;
+      }
+      return false;
+    })(bgColor);
+
+    if (isDark) {
+      document.documentElement.style.setProperty('--suggestion-bg', '#222');
+      document.documentElement.style.setProperty('--suggestion-color', '#eee');
+      document.documentElement.style.setProperty('--suggestion-hover-bg', '#444');
+      // Подправим инпут и селект для темной темы
+      document.querySelectorAll('input[type="text"], select').forEach(el => {
+        el.style.backgroundColor = '#333';
+        el.style.color = '#eee';
+        el.style.borderColor = '#555';
+        el.style.caretColor = '#eee';
+      });
+    } else {
+      document.documentElement.style.setProperty('--suggestion-bg', '#f5f5f5');
+      document.documentElement.style.setProperty('--suggestion-color', '#000');
+      document.documentElement.style.setProperty('--suggestion-hover-bg', '#ddd');
+      // Возвращаем инпуты и селекты в светлую тему
+      document.querySelectorAll('input[type="text"], select').forEach(el => {
+        el.style.backgroundColor = '#f5f5f5';
+        el.style.color = '#000';
+        el.style.borderColor = '#ccc';
+        el.style.caretColor = 'black';
+      });
+    }
   }
+
   applyTheme();
 
   const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
