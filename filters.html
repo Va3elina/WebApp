@@ -30,10 +30,19 @@
       width: 100%; border: none; border-radius: 5px; cursor: pointer;
     }
     button:hover { background-color: #0056b3; }
-    input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+    input[type="text"] {
+      width: 100%; padding: 8px; margin-bottom: 5px;
+      border-radius: 12px; border: 1px solid #ccc;
+      background-color: #f5f5f5 !important;
+      color: #000 !important;
+      /* Для темной темы Telegram: */
+      caret-color: black;
+    }
+    /* Стили для выпадающего списка подсказок */
     .suggestions {
       position: relative;
-      background: white;
+      background: #f5f5f5 !important; /* светлый фон */
+      color: #000 !important; /* чёрный текст */
       border: 1px solid #ccc;
       border-top: none;
       max-height: 150px;
@@ -43,9 +52,12 @@
     .suggestion {
       padding: 8px;
       cursor: pointer;
+      color: #000 !important;
+      background-color: #f5f5f5 !important;
     }
     .suggestion:hover {
-      background-color: #eee;
+      background-color: #ddd !important;
+      color: #000 !important;
     }
     label {
       display: block;
@@ -60,7 +72,7 @@
 <h1>Filtereinstellungen</h1>
 
 <div style="display: flex; gap: 8px; align-items: center;">
-  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1; padding: 8px; border-radius: 12px; border: 1px solid #ccc; background: #f5f5f5;">
+  <input type="text" id="city" placeholder="z.B. Berlin">
   <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
     <option value="5">5 km</option>
     <option value="10" selected>10 km</option>
@@ -293,13 +305,13 @@
     if (!location) {
       // Если зоны нет — город обязателен
       if (!city) {
-        alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus.");
+        alert("Please enter a city or select an area on the map.");
         return;
       }
     }
 
     if (selectedWebsites.length === 0) {
-      alert("Bitte wähle mindestens eine Website aus!");
+      alert("Please select at least one website!");
       return;
     }
 
