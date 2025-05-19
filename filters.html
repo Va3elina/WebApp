@@ -17,13 +17,19 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background-color: var(--bg-color, #fff); 
+      color: var(--text-color, #000); 
+    }
     #map { height: 400px; width: 100%; margin-bottom: 20px; }
     .input-range { margin: 15px 0; }
     .range-row { display: flex; align-items: center; gap: 8px; }
     .range-row input[type="number"] {
-      flex: 1; padding: 8px; border: 1px solid #ccc;
-      border-radius: 12px; background: #f5f5f5;
+      flex: 1; padding: 8px; border: 1px solid var(--border-color, #ccc);
+      border-radius: 12px; background: var(--input-bg, #f5f5f5);
+      color: var(--text-color, #000);
     }
     button {
       background-color: #007bff; color: white; padding: 10px;
@@ -32,19 +38,18 @@
     button:hover { background-color: #0056b3; }
     input[type="text"] {
       width: 100%; padding: 8px; margin-bottom: 5px;
-      border-radius: 12px; border: 1px solid #ccc;
-      background-color: #f5f5f5 !important;
-      color: #000 !important;
-      /* Для темной темы Telegram: */
-      caret-color: black;
+      border-radius: 12px; border: 1px solid var(--border-color, #ccc);
+      background-color: var(--input-bg, #f5f5f5) !important;
+      color: var(--text-color, #000) !important;
+      caret-color: var(--text-color, #000);
     }
 
-    /* Стили для выпадающего списка подсказок с CSS-переменными */
+    /* Стили для выпадающего списка подсказок */
     .suggestions {
       position: relative;
       background: var(--suggestion-bg, #f5f5f5);
       color: var(--suggestion-color, #000);
-      border: 1px solid #ccc;
+      border: 1px solid var(--border-color, #ccc);
       border-top: none;
       max-height: 150px;
       overflow-y: auto;
@@ -60,15 +65,20 @@
     }
     .suggestion:hover {
       background-color: var(--suggestion-hover-bg, #ddd);
-      color: var(--suggestion-color, #000);
     }
 
     label {
       display: block;
       margin-bottom: 5px;
+      color: var(--text-color, #000);
     }
     .leaflet-draw-toolbar a[title="Draw a circle marker"] {
       display: none !important;
+    }
+    select {
+      background-color: var(--input-bg, #f5f5f5);
+      color: var(--text-color, #000);
+      border-color: var(--border-color, #ccc);
     }
   </style>
 </head>
@@ -77,7 +87,7 @@
 
 <div style="display: flex; gap: 8px; align-items: center;">
   <input type="text" id="city" placeholder="z.B. Berlin" autocomplete="off">
-  <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
+  <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid var(--border-color, #ccc);">
     <option value="5">5 km</option>
     <option value="10" selected>10 km</option>
     <option value="15">15 km</option>
@@ -131,45 +141,55 @@
 
   function applyTheme() {
     const theme = tg.themeParams;
-    document.body.style.backgroundColor = theme.bg_color || "white";
-    document.body.style.color = theme.text_color || "black";
-
-    // Проверка яркости фона для определения темной темы
     const bgColor = theme.bg_color || "#ffffff";
-    const isDark = (function(color) {
-      if (color[0] === '#') {
-        const r = parseInt(color.substr(1,2),16);
-        const g = parseInt(color.substr(3,2),16);
-        const b = parseInt(color.substr(5,2),16);
-        const brightness = (r*299 + g*587 + b*114) / 1000;
-        return brightness < 128;
-      }
-      return false;
-    })(bgColor);
+    const textColor = theme.text_color || "#000000";
+    const hintColor = theme.hint_color || "#707579";
+    const linkColor = theme.link_color || "#007bff";
+    const buttonColor = theme.button_color || "#007bff";
+    const buttonTextColor = theme.button_text_color || "#ffffff";
 
-    if (isDark) {
-      document.documentElement.style.setProperty('--suggestion-bg', '#222');
-      document.documentElement.style.setProperty('--suggestion-color', '#eee');
-      document.documentElement.style.setProperty('--suggestion-hover-bg', '#444');
-      // Подправим инпут и селект для темной темы
-      document.querySelectorAll('input[type="text"], select').forEach(el => {
-        el.style.backgroundColor = '#333';
-        el.style.color = '#eee';
-        el.style.borderColor = '#555';
-        el.style.caretColor = '#eee';
-      });
-    } else {
-      document.documentElement.style.setProperty('--suggestion-bg', '#f5f5f5');
-      document.documentElement.style.setProperty('--suggestion-color', '#000');
-      document.documentElement.style.setProperty('--suggestion-hover-bg', '#ddd');
-      // Возвращаем инпуты и селекты в светлую тему
-      document.querySelectorAll('input[type="text"], select').forEach(el => {
-        el.style.backgroundColor = '#f5f5f5';
-        el.style.color = '#000';
-        el.style.borderColor = '#ccc';
-        el.style.caretColor = 'black';
-      });
+    // Устанавливаем CSS-переменные
+    document.documentElement.style.setProperty('--bg-color', bgColor);
+    document.documentElement.style.setProperty('--text-color', textColor);
+    document.documentElement.style.setProperty('--input-bg', isDarkTheme(bgColor) ? '#333' : '#f5f5f5');
+    document.documentElement.style.setProperty('--border-color', isDarkTheme(bgColor) ? '#555' : '#ccc');
+    
+    // Стили для выпадающего списка
+    document.documentElement.style.setProperty('--suggestion-bg', isDarkTheme(bgColor) ? '#222' : '#f5f5f5');
+    document.documentElement.style.setProperty('--suggestion-color', textColor);
+    document.documentElement.style.setProperty('--suggestion-hover-bg', isDarkTheme(bgColor) ? '#444' : '#ddd');
+
+    // Принудительное обновление стилей существующих элементов
+    document.querySelectorAll('.suggestion, .suggestions').forEach(el => {
+      el.style.backgroundColor = isDarkTheme(bgColor) ? '#222' : '#f5f5f5';
+      el.style.color = textColor;
+      el.style.borderColor = isDarkTheme(bgColor) ? '#555' : '#ccc';
+    });
+
+    // Обновляем инпуты и селекты
+    document.querySelectorAll('input, select').forEach(el => {
+      el.style.backgroundColor = isDarkTheme(bgColor) ? '#333' : '#f5f5f5';
+      el.style.color = textColor;
+      el.style.borderColor = isDarkTheme(bgColor) ? '#555' : '#ccc';
+      el.style.caretColor = textColor;
+    });
+
+    // Обновляем кнопки
+    document.querySelectorAll('button').forEach(el => {
+      el.style.backgroundColor = buttonColor;
+      el.style.color = buttonTextColor;
+    });
+  }
+
+  function isDarkTheme(bgColor) {
+    if (bgColor[0] === '#') {
+      const r = parseInt(bgColor.substr(1,2),16);
+      const g = parseInt(bgColor.substr(3,2),16);
+      const b = parseInt(bgColor.substr(5,2),16);
+      const brightness = (r*299 + g*587 + b*114) / 1000;
+      return brightness < 128;
     }
+    return false;
   }
 
   applyTheme();
@@ -263,6 +283,9 @@
                 if (container.innerHTML === "") {
                   container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
                 }
+                
+                // Применяем текущую тему к новым элементам
+                applyTheme();
               });
     }, 300);
   });
