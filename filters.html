@@ -258,7 +258,6 @@
     }
   });
 
-  // *** Новая функция — получить выбранную зону (круг или полигон) ***
   function getSelectedArea() {
     const layer = drawnItems.getLayers()[0];
     if (!layer) return null;
@@ -275,7 +274,6 @@
       const latlngs = layer.getLatLngs();
       let coordinates = [];
       if (Array.isArray(latlngs) && latlngs.length > 0) {
-        // Берём первый контур (обычно latlngs[0])
         coordinates = latlngs[0].map(ll => [ll.lat, ll.lng]);
       }
       return {
@@ -293,8 +291,11 @@
     const city = document.getElementById("city").value.trim();
 
     if (!location) {
-      alert("Bitte wähle eine Zone auf der Karte aus (Kreis oder Polygon).");
-      return;
+      // Если зоны нет — город обязателен
+      if (!city) {
+        alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus.");
+        return;
+      }
     }
 
     if (selectedWebsites.length === 0) {
@@ -327,7 +328,6 @@
       websites: selectedWebsites
     };
 
-    console.log("📤 Отправка данных в бота:", filters);
     tg.sendData(JSON.stringify(filters));
     tg.close();
   });
