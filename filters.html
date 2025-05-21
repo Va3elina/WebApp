@@ -272,7 +272,7 @@
   tg.expand();
   
   // Функция применения темы
- function applyTheme() {
+function applyTheme() {
   const theme = tg.themeParams;
 
   // Основные цвета из Telegram
@@ -297,9 +297,22 @@
   document.documentElement.style.setProperty('--tg-border-color', isDark ? '#555555' : '#cccccc');
   document.documentElement.style.setProperty('--suggestions-hover', isDark ? '#444444' : '#e0e0e0');
 
-  // ЯВНОЕ задание цветов подсказок
-  document.documentElement.style.setProperty('--suggestions-bg', isDark ? '#2a2a2a' : '#ffffff');
-  document.documentElement.style.setProperty('--suggestions-text', isDark ? '#f0f0f0' : '#111111');
+  // Жестко задаём стили для подсказок
+  const suggestionStyle = document.createElement("style");
+  suggestionStyle.innerHTML = 
+    .suggestions {
+      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
+      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
+    }
+    .suggestion {
+      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
+      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
+    }
+    .suggestion:hover {
+      background-color: ${isDark ? '#444444' : '#e0e0e0'} !important;
+    }
+  ;
+  document.head.appendChild(suggestionStyle);
 
   // Обновление стилей Leaflet-контролов
   if (window.L) {
@@ -530,3 +543,5 @@
 </script>
 </body>
 </html>
+
+
