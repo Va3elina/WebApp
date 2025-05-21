@@ -297,22 +297,18 @@ function applyTheme() {
   document.documentElement.style.setProperty('--tg-border-color', isDark ? '#555555' : '#cccccc');
   document.documentElement.style.setProperty('--suggestions-hover', isDark ? '#444444' : '#e0e0e0');
 
-  // Жестко задаём стили для подсказок
-  const suggestionStyle = document.createElement("style");
-  suggestionStyle.innerHTML = `
-    .suggestions {
-      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
-      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
-    }
-    .suggestion {
-      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
-      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
-    }
-    .suggestion:hover {
-      background-color: ${isDark ? '#444444' : '#e0e0e0'} !important;
-    }
-  `;
-  document.head.appendChild(suggestionStyle);
+  // Жестко задаём стили для подсказок через JS
+  const suggestions = document.querySelector(".suggestions");
+  if (suggestions) {
+    suggestions.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
+    suggestions.style.color = isDark ? "#f0f0f0" : "#111111";
+    suggestions.style.border = `1px solid ${isDark ? '#555555' : '#ccc'}`;
+  }
+
+  document.querySelectorAll(".suggestion").forEach(el => {
+    el.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
+    el.style.color = isDark ? "#f0f0f0" : "#111111";
+  });
 
   // Обновление стилей Leaflet-контролов
   if (window.L) {
@@ -330,6 +326,7 @@ function applyTheme() {
     document.head.appendChild(mapStyle);
   }
 }
+
 
 
   // Обработчик изменения темы
