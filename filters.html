@@ -272,47 +272,52 @@
   tg.expand();
   
   // Функция применения темы
-  function applyTheme() {
-    const theme = tg.themeParams;
-    
-    // Основные цвета
-    document.documentElement.style.setProperty('--tg-bg-color', theme.bg_color || '#ffffff');
-    document.documentElement.style.setProperty('--tg-text-color', theme.text_color || '#000000');
-    document.documentElement.style.setProperty('--tg-hint-color', theme.hint_color || '#707579');
-    document.documentElement.style.setProperty('--tg-link-color', theme.link_color || '#007bff');
-    document.documentElement.style.setProperty('--tg-button-color', theme.button_color || '#007bff');
-    document.documentElement.style.setProperty('--tg-button-text-color', theme.button_text_color || '#ffffff');
-    
-    // Определение темной темы
-    const bgColor = theme.bg_color || '#ffffff';
-    const rgb = parseInt(bgColor.substring(1), 16);
-    const r = (rgb >> 16) & 0xff;
-    const g = (rgb >> 8) & 0xff;
-    const b = (rgb >> 0) & 0xff;
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    const isDark = brightness < 128;
-    
-    // Производные цвета
-    document.documentElement.style.setProperty('--tg-secondary-bg', isDark ? '#333333' : '#f5f5f5');
-    document.documentElement.style.setProperty('--tg-border-color', isDark ? '#555555' : '#cccccc');
-    document.documentElement.style.setProperty('--suggestions-hover', isDark ? '#444444' : '#e0e0e0');
-    
-    // Обновление элементов управления картой
-    if (window.L) {
-      const mapStyle = document.createElement('style');
-      mapStyle.textContent = 
-        .leaflet-control {
-          background-color: ${isDark ? '#333' : '#fff'} !important;
-          color: ${isDark ? '#fff' : '#000'} !important;
-        }
-        .leaflet-control-attribution {
-          background-color: ${isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'} !important;
-          color: ${isDark ? '#fff' : '#000'} !important;
-        }
-      ;
-      document.head.appendChild(mapStyle);
-    }
+ function applyTheme() {
+  const theme = tg.themeParams;
+
+  // Основные цвета из Telegram
+  document.documentElement.style.setProperty('--tg-bg-color', theme.bg_color || '#ffffff');
+  document.documentElement.style.setProperty('--tg-text-color', theme.text_color || '#000000');
+  document.documentElement.style.setProperty('--tg-hint-color', theme.hint_color || '#707579');
+  document.documentElement.style.setProperty('--tg-link-color', theme.link_color || '#007bff');
+  document.documentElement.style.setProperty('--tg-button-color', theme.button_color || '#007bff');
+  document.documentElement.style.setProperty('--tg-button-text-color', theme.button_text_color || '#ffffff');
+
+  // Определение, тёмная ли тема
+  const bgColor = theme.bg_color || '#ffffff';
+  const rgb = parseInt(bgColor.substring(1), 16);
+  const r = (rgb >> 16) & 0xff;
+  const g = (rgb >> 8) & 0xff;
+  const b = (rgb >> 0) & 0xff;
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  const isDark = brightness < 128;
+
+  // Производные цвета
+  document.documentElement.style.setProperty('--tg-secondary-bg', isDark ? '#333333' : '#f5f5f5');
+  document.documentElement.style.setProperty('--tg-border-color', isDark ? '#555555' : '#cccccc');
+  document.documentElement.style.setProperty('--suggestions-hover', isDark ? '#444444' : '#e0e0e0');
+
+  // ЯВНОЕ задание цветов подсказок
+  document.documentElement.style.setProperty('--suggestions-bg', isDark ? '#2a2a2a' : '#ffffff');
+  document.documentElement.style.setProperty('--suggestions-text', isDark ? '#f0f0f0' : '#111111');
+
+  // Обновление стилей Leaflet-контролов
+  if (window.L) {
+    const mapStyle = document.createElement('style');
+    mapStyle.textContent = 
+      .leaflet-control {
+        background-color: ${isDark ? '#333' : '#fff'} !important;
+        color: ${isDark ? '#fff' : '#000'} !important;
+      }
+      .leaflet-control-attribution {
+        background-color: ${isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'} !important;
+        color: ${isDark ? '#fff' : '#000'} !important;
+      }
+    ;
+    document.head.appendChild(mapStyle);
   }
+}
+
 
   // Обработчик изменения темы
   tg.onEvent('themeChanged', applyTheme);
