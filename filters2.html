@@ -39,6 +39,7 @@
       max-height: 150px;
       overflow-y: auto;
       z-index: 1000;
+      border-radius: 0 0 12px 12px;
     }
     .suggestion {
       padding: 8px;
@@ -46,6 +47,7 @@
     }
     .suggestion:hover {
       background-color: #eee;
+      cursor: pointer;
     }
     label {
       display: block;
@@ -113,9 +115,26 @@
   tg.expand();
   tg.onEvent('themeChanged', applyTheme);
   function applyTheme() {
-    const theme = tg.themeParams;
+    /*const theme = tg.themeParams;
     document.body.style.backgroundColor = theme.bg_color || "white";
-    document.body.style.color = theme.text_color || "black";
+    document.body.style.color = theme.text_color || "black";*/
+
+    const theme = tg.themeParams || {};
+    const bg = theme.bg_color || "#ffffff";
+    const text = theme.text_color || "#000000";
+    const hint = theme.hint_color || "#999999";
+
+    const suggestions = document.querySelector(".suggestions");
+    if (suggestions) {
+      suggestions.style.backgroundColor = bg;
+      suggestions.style.color = text;
+      suggestions.style.border = '1px solid ${hint}';
+    }
+
+    document.querySelectorAll(".suggestion").forEach(el => {
+      el.style.backgroundColor = bg;
+      el.style.color = text;
+    });
   }
   applyTheme();
 
