@@ -297,23 +297,27 @@ function applyTheme() {
   document.documentElement.style.setProperty('--tg-border-color', isDark ? '#555555' : '#cccccc');
   document.documentElement.style.setProperty('--suggestions-hover', isDark ? '#444444' : '#e0e0e0');
 
-  // Жестко задаём стили для подсказок через JS
-  const suggestions = document.querySelector(".suggestions");
-  if (suggestions) {
-    suggestions.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
-    suggestions.style.color = isDark ? "#f0f0f0" : "#111111";
-    suggestions.style.border = `1px solid ${isDark ? '#555555' : '#ccc'}`;
-  }
-
-  document.querySelectorAll(".suggestion").forEach(el => {
-    el.style.backgroundColor = isDark ? "#2a2a2a" : "#ffffff";
-    el.style.color = isDark ? "#f0f0f0" : "#111111";
-  });
+  // Жестко задаём стили для подсказок
+  const suggestionStyle = document.createElement("style");
+  suggestionStyle.innerHTML = 
+    .suggestions {
+      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
+      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
+    }
+    .suggestion {
+      background-color: ${isDark ? '#2a2a2a' : '#ffffff'} !important;
+      color: ${isDark ? '#f0f0f0' : '#111111'} !important;
+    }
+    .suggestion:hover {
+      background-color: ${isDark ? '#444444' : '#e0e0e0'} !important;
+    }
+  ;
+  document.head.appendChild(suggestionStyle);
 
   // Обновление стилей Leaflet-контролов
   if (window.L) {
     const mapStyle = document.createElement('style');
-    mapStyle.textContent = `
+    mapStyle.textContent = 
       .leaflet-control {
         background-color: ${isDark ? '#333' : '#fff'} !important;
         color: ${isDark ? '#fff' : '#000'} !important;
@@ -322,11 +326,10 @@ function applyTheme() {
         background-color: ${isDark ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'} !important;
         color: ${isDark ? '#fff' : '#000'} !important;
       }
-    `;
+    ;
     document.head.appendChild(mapStyle);
   }
 }
-
 
 
   // Обработчик изменения темы
@@ -386,7 +389,7 @@ function applyTheme() {
     }
 
     debounceTimer = setTimeout(() => {
-      fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=5&apiKey=${GEOAPIFY_KEY}`)
+      fetch(https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=5&apiKey=${GEOAPIFY_KEY})
         .then(response => response.json())
         .then(data => {
           const container = document.getElementById("city-suggestions");
@@ -447,7 +450,7 @@ function applyTheme() {
     const cityInput = document.getElementById("city").value.trim();
     if (!cityInput) return;
 
-    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(cityInput)}&lang=de&filter=countrycode:de&limit=1&apiKey=${GEOAPIFY_KEY}`)
+    fetch(https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(cityInput)}&lang=de&filter=countrycode:de&limit=1&apiKey=${GEOAPIFY_KEY})
       .then(response => response.json())
       .then(data => {
         if (data.features && data.features.length > 0) {
