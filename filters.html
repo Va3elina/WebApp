@@ -1,85 +1,75 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Filtereinstellungen</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Filtereinstellungen</title>
 
-  <!-- Библиотеки -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
+    <!-- Библиотеки -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.js"></script>
 
-  <!-- Стили -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
+    <!-- Стили -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
 
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
-    #map { height: 400px; width: 100%; margin-bottom: 20px; }
-    .input-range { margin: 15px 0; }
-    .range-row { display: flex; align-items: center; gap: 8px; }
-    .range-row input[type="number"] {
-      flex: 1; padding: 8px; border: 1px solid #ccc;
-      border-radius: 12px; background: #f5f5f5;
-    }
-    button {
-      background-color: #007bff; color: white; padding: 10px;
-      width: 100%; border: none; border-radius: 5px; cursor: pointer;
-    }
-    button:hover { background-color: #0056b3; }
-    input[type="text"] {
-      width: 100%; padding: 8px; margin-bottom: 5px;
-      border-radius: 12px; border: 1px solid #ccc;
-      background-color: #f5f5f5 !important;
-      color: #000 !important;
-      /* Для темной темы Telegram: */
-      caret-color: black;
-    }
-    /* Стили для выпадающего списка подсказок */
-    .suggestions {
-      position: relative;
-      background: #f5f5f5 !important; /* светлый фон */
-      color: #000 !important; /* чёрный текст */
-      border: 1px solid #ccc;
-      border-top: none;
-      max-height: 150px;
-      overflow-y: auto;
-      z-index: 1000;
-    }
-    .suggestion {
-      padding: 8px;
-      cursor: pointer;
-      color: #000 !important;
-      background-color: #f5f5f5 !important;
-    }
-    .suggestion:hover {
-      background-color: #ddd !important;
-      color: #000 !important;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    .leaflet-draw-toolbar a[title="Draw a circle marker"] {
-      display: none !important;
-    }
-  </style>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
+        #map { height: 400px; width: 100%; margin-bottom: 20px; }
+        .input-range { margin: 15px 0; }
+        .range-row { display: flex; align-items: center; gap: 8px; }
+        .range-row input[type="number"] {
+            flex: 1; padding: 8px; border: 1px solid #ccc;
+            border-radius: 12px; background: #f5f5f5;
+        }
+        button {
+            background-color: #007bff; color: white; padding: 10px;
+            width: 100%; border: none; border-radius: 5px; cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+        .suggestions {
+            position: relative;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            border-radius: 0 0 12px 12px;
+        }
+        .suggestion {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .suggestion:hover {
+            background-color: #eee;
+            cursor: pointer;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .leaflet-draw-toolbar a[title="Draw a circle marker"] {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 <h1>Filtereinstellungen</h1>
 
 <div style="display: flex; gap: 8px; align-items: center;">
-  <input type="text" id="city" placeholder="z.B. Berlin">
-  <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
-    <option value="5">5 km</option>
-    <option value="10" selected>10 km</option>
-    <option value="15">15 km</option>
-    <option value="20">20 km</option>
-    <option value="30">30 km</option>
-  </select>
+    <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1; padding: 8px; border-radius: 12px; border: 1px solid #ccc; background: #f5f5f5;">
+    <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
+        <option value="5">5 km</option>
+        <option value="10" selected>10 km</option>
+        <option value="15">15 km</option>
+        <option value="20">20 km</option>
+        <option value="30">30 km</option>
+    </select>
 </div>
 <div id="city-suggestions" class="suggestions"></div>
 <button onclick="searchCity()">Karte aktualisieren</button>
@@ -87,262 +77,275 @@
 <div id="map"></div>
 
 <div class="input-range">
-  <label>Preisbereich, €:</label>
-  <div class="range-row">
-    <input type="number" id="price-min" placeholder="Min">
-    <span>–</span>
-    <input type="number" id="price-max" placeholder="Max">
-  </div>
+    <label>Preisbereich, €:</label>
+    <div class="range-row">
+        <input type="number" id="price-min" placeholder="Min">
+        <span>–</span>
+        <input type="number" id="price-max" placeholder="Max">
+    </div>
 </div>
 
 <div class="input-range">
-  <label>Größenbereich, м²:</label>
-  <div class="range-row">
-    <input type="number" id="size-min" placeholder="Min">
-    <span>–</span>
-    <input type="number" id="size-max" placeholder="Max">
-  </div>
+    <label>Größenbereich, м²:</label>
+    <div class="range-row">
+        <input type="number" id="size-min" placeholder="Min">
+        <span>–</span>
+        <input type="number" id="size-max" placeholder="Max">
+    </div>
 </div>
 
 <div id="options">
-  <label><input type="checkbox" id="tauschwohnung"> Tauschwohnungen</label>
-  <label><input type="checkbox" id="wbs"> WBS erforderlich</label>
+    <label><input type="checkbox" id="tauschwohnung"> Tauschwohnungen</label>
+    <label><input type="checkbox" id="wbs"> WBS erforderlich</label>
 </div>
 
 <h3>Websites</h3>
 <div id="websites">
-  <label><input type="checkbox" value="immobilienscout24"> ImmobilienScout24.de</label>
-  <label><input type="checkbox" value="kleinanzeigen"> Kleinanzeigen.de</label>
-  <label><input type="checkbox" value="immowelt"> Immowelt.de</label>
+    <label><input type="checkbox" value="immobilienscout24"> ImmobilienScout24.de</label>
+    <label><input type="checkbox" value="kleinanzeigen"> Kleinanzeigen.de</label>
+    <label><input type="checkbox" value="immowelt"> Immowelt.de</label>
 </div>
 
 <button id="save" style="margin-top: 15px">Filter speichern</button>
 
 <script>
-  let debounceTimer;
+    let debounceTimer;
 
-  const tg = window.Telegram.WebApp;
-  tg.expand();
-  tg.onEvent('themeChanged', applyTheme);
-  function applyTheme() {
-    const theme = tg.themeParams;
-    document.body.style.backgroundColor = theme.bg_color || "white";
-    document.body.style.color = theme.text_color || "black";
-  }
-  applyTheme();
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.onEvent('themeChanged', applyTheme);
+    function applyTheme() {
+        const theme = tg.themeParams || {};
+        const bg = theme.bg_color || "#ffffff";
+        const text = theme.text_color || "#000000";
+        const hint = theme.hint_color || "#999999";
 
-  const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
+        const suggestions = document.querySelector(".suggestions");
+        if (suggestions) {
+            suggestions.style.backgroundColor = bg;
+            suggestions.style.color = text;
+            suggestions.style.border = '1px solid ${hint}';
+        }
 
-  const map = L.map('map').setView([51.1657, 10.4515], 6);
+        document.querySelectorAll(".suggestion").forEach(el => {
+            el.style.backgroundColor = bg;
+            el.style.color = text;
+        });
+    }
+    applyTheme();
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+    const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
 
-  const drawnItems = new L.FeatureGroup();
-  map.addLayer(drawnItems);
+    const map = L.map('map').setView([51.1657, 10.4515], 6);
 
-  const drawControl = new L.Control.Draw({
-    draw: {
-      polygon: true,
-      rectangle: false,
-      circle: true,
-      polyline: false,
-      marker: false,
-      circlemarker: false
-    },
-    edit: { featureGroup: drawnItems }
-  });
-  map.addControl(drawControl);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-  map.on(L.Draw.Event.CREATED, e => {
-    drawnItems.clearLayers();
-    drawnItems.addLayer(e.layer);
-  });
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
 
-  L.control.locate({
-    position: 'topleft',
-    strings: { title: "Zeige mir meine Position" },
-    flyTo: true
-  }).addTo(map);
+    const drawControl = new L.Control.Draw({
+        draw: {
+            polygon: true,
+            rectangle: false,
+            circle: true,
+            polyline: false,
+            marker: false,
+            circlemarker: false
+        },
+        edit: { featureGroup: drawnItems }
+    });
+    map.addControl(drawControl);
 
-  function normalize(str) {
-    return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
+    map.on(L.Draw.Event.CREATED, e => {
+        drawnItems.clearLayers();
+        drawnItems.addLayer(e.layer);
+    });
+
+    L.control.locate({
+        position: 'topleft',
+        strings: { title: "Zeige mir meine Position" },
+        flyTo: true
+    }).addTo(map);
+
+    function normalize(str) {
+        return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  }
-
-  const inputAliasMap = {
-    "koeln": "köln", "koln": "köln", "cologne": "köln",
-    "muenchen": "münchen", "munich": "münchen",
-    "nuernberg": "nürnberg", "nuremberg": "nürnberg",
-    "brunswick": "braunschweig"
-  };
-
-  // Автоподсказка городов
-  document.getElementById("city").addEventListener("input", function () {
-    clearTimeout(debounceTimer);
-    let query = this.value.trim();
-    const normalized = normalize(query);
-    if (inputAliasMap[normalized]) query = inputAliasMap[normalized];
-    if (query.length < 2) {
-      document.getElementById("city-suggestions").innerHTML = "";
-      return;
     }
 
-    debounceTimer = setTimeout(() => {
-      fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
-              .then(res => res.json())
-              .then(data => {
-                const container = document.getElementById("city-suggestions");
-                container.innerHTML = "";
-                const shown = new Set();
-
-                data.features.forEach(feature => {
-                  const city = feature.properties.city || feature.properties.town || feature.properties.village;
-                  if (!city) return;
-
-                  const cityNorm = normalize(city);
-                  if (shown.has(cityNorm)) return;
-                  shown.add(cityNorm);
-
-                  const div = document.createElement("div");
-                  div.className = "suggestion";
-                  div.textContent = city;
-                  div.addEventListener("click", () => {
-                    document.getElementById("city").value = city;
-                    container.innerHTML = "";
-                    const [lon, lat] = feature.geometry.coordinates;
-                    map.setView([lat, lon], 13);
-                  });
-                  container.appendChild(div);
-                });
-
-                if (container.innerHTML === "") {
-                  container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
-                }
-              });
-    }, 300);
-  });
-
-  function updateCircleAndZoom(lat, lon) {
-    const radiusKm = parseInt(document.getElementById("radius").value || "10");
-    const radiusMeters = radiusKm * 1000;
-    const circle = L.circle([lat, lon], { radius: radiusMeters, color: '#3388ff' });
-    drawnItems.clearLayers();
-    drawnItems.addLayer(circle);
-    map.fitBounds(circle.getBounds());
-  }
-
-  function searchCity() {
-    let inputCity = document.getElementById("city").value.trim();
-    const normalized = normalize(inputCity);
-    if (inputAliasMap[normalized]) inputCity = inputAliasMap[normalized];
-
-    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(inputCity)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
-            .then(res => res.json())
-            .then(data => {
-              const match = data.features.find(feature => {
-                const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
-                return resultCity && normalize(resultCity) === normalize(inputCity);
-              });
-              if (match) {
-                const [lon, lat] = match.geometry.coordinates;
-                updateCircleAndZoom(lat, lon);
-              } else {
-                alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
-              }
-            });
-  }
-
-  document.getElementById("city").addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      searchCity();
-      e.target.blur();
-    }
-  });
-
-  document.getElementById("radius").addEventListener("change", () => {
-    const layer = drawnItems.getLayers()[0];
-    if (layer instanceof L.Circle) {
-      const latlng = layer.getLatLng();
-      updateCircleAndZoom(latlng.lat, latlng.lng);
-    }
-  });
-
-  function getSelectedArea() {
-    const layer = drawnItems.getLayers()[0];
-    if (!layer) return null;
-
-    if (layer instanceof L.Circle) {
-      return {
-        type: "circle",
-        center: [layer.getLatLng().lat, layer.getLatLng().lng],
-        radius: layer.getRadius()
-      };
-    }
-
-    if (layer instanceof L.Polygon) {
-      const latlngs = layer.getLatLngs();
-      let coordinates = [];
-      if (Array.isArray(latlngs) && latlngs.length > 0) {
-        coordinates = latlngs[0].map(ll => [ll.lat, ll.lng]);
-      }
-      return {
-        type: "polygon",
-        coordinates: coordinates
-      };
-    }
-
-    return null;
-  }
-
-  document.getElementById("save").addEventListener("click", () => {
-    const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
-    const location = getSelectedArea();
-    const city = document.getElementById("city").value.trim();
-
-    if (!location) {
-      // Если зоны нет — город обязателен
-      if (!city) {
-        alert("Please enter a city or select an area on the map.");
-        return;
-      }
-    }
-
-    if (selectedWebsites.length === 0) {
-      alert("Please select at least one website!");
-      return;
-    }
-
-    const priceMin = document.getElementById('price-min').value;
-    const priceMax = document.getElementById('price-max').value;
-    const price = priceMin || priceMax ? [
-      parseInt(priceMin || '0'),
-      parseInt(priceMax || '100000')
-    ] : null;
-
-    const sizeMin = document.getElementById('size-min').value;
-    const sizeMax = document.getElementById('size-max').value;
-    const size = sizeMin || sizeMax ? [
-      parseInt(sizeMin || '0'),
-      parseInt(sizeMax || '1000')
-    ] : null;
-
-    const filters = {
-      city,
-      radius: parseInt(document.getElementById("radius").value || "10"),
-      price,
-      size,
-      tauschwohnung: document.getElementById('tauschwohnung').checked,
-      wbs: document.getElementById('wbs').checked,
-      location,
-      websites: selectedWebsites
+    const inputAliasMap = {
+        "koeln": "köln", "koln": "köln", "cologne": "köln",
+        "muenchen": "münchen", "munich": "münchen",
+        "nuernberg": "nürnberg", "nuremberg": "nürnberg",
+        "brunswick": "braunschweig"
     };
 
-    tg.sendData(JSON.stringify(filters));
-    tg.close();
-  });
+    // Автоподсказка городов
+    document.getElementById("city").addEventListener("input", function () {
+        clearTimeout(debounceTimer);
+        let query = this.value.trim();
+        const normalized = normalize(query);
+        if (inputAliasMap[normalized]) query = inputAliasMap[normalized];
+        if (query.length < 2) {
+            document.getElementById("city-suggestions").innerHTML = "";
+            return;
+        }
+
+        debounceTimer = setTimeout(() => {
+            fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById("city-suggestions");
+                    container.innerHTML = "";
+                    const shown = new Set();
+
+                    data.features.forEach(feature => {
+                        const city = feature.properties.city || feature.properties.town || feature.properties.village;
+                        if (!city) return;
+
+                        const cityNorm = normalize(city);
+                        if (shown.has(cityNorm)) return;
+                        shown.add(cityNorm);
+
+                        const div = document.createElement("div");
+                        div.className = "suggestion";
+                        div.textContent = city;
+                        div.addEventListener("click", () => {
+                            document.getElementById("city").value = city;
+                            container.innerHTML = "";
+                            const [lon, lat] = feature.geometry.coordinates;
+                            map.setView([lat, lon], 13);
+                        });
+                        container.appendChild(div);
+                    });
+
+                    if (container.innerHTML === "") {
+                        container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
+                    }
+                });
+        }, 300);
+    });
+
+    function updateCircleAndZoom(lat, lon) {
+        const radiusKm = parseInt(document.getElementById("radius").value || "10");
+        const radiusMeters = radiusKm * 1000;
+        const circle = L.circle([lat, lon], { radius: radiusMeters, color: '#3388ff' });
+        drawnItems.clearLayers();
+        drawnItems.addLayer(circle);
+        map.fitBounds(circle.getBounds());
+    }
+
+    function searchCity() {
+        let inputCity = document.getElementById("city").value.trim();
+        const normalized = normalize(inputCity);
+        if (inputAliasMap[normalized]) inputCity = inputAliasMap[normalized];
+
+        fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(inputCity)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+            .then(res => res.json())
+            .then(data => {
+                const match = data.features.find(feature => {
+                    const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
+                    return resultCity && normalize(resultCity) === normalize(inputCity);
+                });
+                if (match) {
+                    const [lon, lat] = match.geometry.coordinates;
+                    updateCircleAndZoom(lat, lon);
+                } else {
+                    alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
+                }
+            });
+    }
+
+    document.getElementById("city").addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            searchCity();
+            e.target.blur();
+        }
+    });
+
+    document.getElementById("radius").addEventListener("change", () => {
+        const layer = drawnItems.getLayers()[0];
+        if (layer instanceof L.Circle) {
+            const latlng = layer.getLatLng();
+            updateCircleAndZoom(latlng.lat, latlng.lng);
+        }
+    });
+
+    function getSelectedArea() {
+        const layer = drawnItems.getLayers()[0];
+        if (!layer) return null;
+
+        if (layer instanceof L.Circle) {
+            return {
+                type: "circle",
+                center: [layer.getLatLng().lat, layer.getLatLng().lng],
+                radius: layer.getRadius()
+            };
+        }
+
+        if (layer instanceof L.Polygon) {
+            const latlngs = layer.getLatLngs();
+            let coordinates = [];
+            if (Array.isArray(latlngs) && latlngs.length > 0) {
+                coordinates = latlngs[0].map(ll => [ll.lat, ll.lng]);
+            }
+            return {
+                type: "polygon",
+                coordinates: coordinates
+            };
+        }
+
+        return null;
+    }
+
+    document.getElementById("save").addEventListener("click", () => {
+        const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
+        const location = getSelectedArea();
+        const city = document.getElementById("city").value.trim();
+
+        if (!location) {
+            // Если зоны нет — город обязателен
+            if (!city) {
+                alert("Please enter a city or select an area on the map.");
+                return;
+            }
+        }
+
+        if (selectedWebsites.length === 0) {
+            alert("Please select at least one website!");
+            return;
+        }
+
+        const priceMin = document.getElementById('price-min').value;
+        const priceMax = document.getElementById('price-max').value;
+        const price = priceMin || priceMax ? [
+            parseInt(priceMin || '0'),
+            parseInt(priceMax || '100000')
+        ] : null;
+
+        const sizeMin = document.getElementById('size-min').value;
+        const sizeMax = document.getElementById('size-max').value;
+        const size = sizeMin || sizeMax ? [
+            parseInt(sizeMin || '0'),
+            parseInt(sizeMax || '1000')
+        ] : null;
+
+        const filters = {
+            city,
+            radius: parseInt(document.getElementById("radius").value || "10"),
+            price,
+            size,
+            tauschwohnung: document.getElementById('tauschwohnung').checked,
+            wbs: document.getElementById('wbs').checked,
+            location,
+            websites: selectedWebsites
+        };
+
+        tg.sendData(JSON.stringify(filters));
+        tg.close();
+    });
 
 </script>
 
