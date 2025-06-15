@@ -17,53 +17,137 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-locatecontrol/0.78.0/L.Control.Locate.min.css" />
 
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #fff; color: #000; }
-    #map { height: 400px; width: 100%; margin-bottom: 20px; }
-    .input-range { margin: 15px 0; }
-    .range-row { display: flex; align-items: center; gap: 8px; }
-    .range-row input[type="number"] {
-      flex: 1; padding: 8px; border: 1px solid #ccc;
-      border-radius: 12px; background: #f5f5f5;
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+      --hint-color: #999999;
+      --input-bg: #f5f5f5;
+      --border-color: #cccccc;
+      --button-bg: #007bff;
+      --button-hover: #0056b3;
     }
+
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    #map {
+      height: 400px;
+      width: 100%;
+      margin-bottom: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .input-range {
+      margin: 15px 0;
+    }
+
+    .range-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--hint-color);
+      border-radius: 12px;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      box-sizing: border-box;
+    }
+
     button {
-      background-color: #007bff; color: white; padding: 10px;
-      width: 100%; border: none; border-radius: 5px; cursor: pointer;
+      background-color: var(--button-bg);
+      color: white;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
     }
-    button:hover { background-color: #0056b3; }
-    input[type="text"] { width: 100%; padding: 8px; margin-bottom: 5px; }
+
+    button:hover {
+      background-color: var(--button-hover);
+    }
+
     .suggestions {
       position: relative;
-      background: white;
-      border: 1px solid #ccc;
+      background-color: var(--bg-color);
+      border: 1px solid var(--hint-color);
       border-top: none;
       max-height: 150px;
       overflow-y: auto;
       z-index: 1000;
       border-radius: 0 0 12px 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
+
     .suggestion {
       padding: 8px;
       cursor: pointer;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.2s;
     }
+
     .suggestion:hover {
-      background-color: #eee;
-      cursor: pointer;
+      background-color: var(--hint-color);
+      opacity: 0.8;
     }
+
     label {
       display: block;
       margin-bottom: 5px;
+      color: var(--text-color);
     }
+
     .leaflet-draw-toolbar a[title="Draw a circle marker"] {
       display: none !important;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10000;
+      font-size: 14px;
+      max-width: 90%;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    h1, h3 {
+      color: var(--text-color);
     }
   </style>
 </head>
 <body>
 <h1>Filtereinstellungen</h1>
 
-<div style="display: flex; gap: 8px; align-items: center;">
-  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1; padding: 8px; border-radius: 12px; border: 1px solid #ccc; background: #f5f5f5;">
-  <select id="radius" style="width: 73px; padding: 8px; margin-bottom: 5px; border-radius: 12px; border: 1px solid #ccc; background: white;">
+<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
+  <input type="text" id="city" placeholder="z.B. Berlin" style="flex: 1;">
+  <select id="radius" style="width: 85px;">
     <option value="5">5 km</option>
     <option value="10" selected>10 km</option>
     <option value="15">15 km</option>
@@ -72,7 +156,7 @@
   </select>
 </div>
 <div id="city-suggestions" class="suggestions"></div>
-<button onclick="searchCity()">Karte aktualisieren</button>
+<button onclick="searchCity()">Suchen</button>
 
 <div id="map"></div>
 
@@ -107,60 +191,73 @@
 </div>
 
 <button id="save" style="margin-top: 15px">Filter speichern</button>
+<div id="toast" class="toast"></div>
 
 <script>
   let debounceTimer;
+  let lastController = null; // Для отмены предыдущих запросов
+  let map; // Глобальная переменная для карты
 
+  // Инициализация Telegram WebApp
   const tg = window.Telegram.WebApp;
   tg.expand();
-  tg.onEvent('themeChanged', applyTheme);
-  function applyTheme() {
-    /*const theme = tg.themeParams;
-    document.body.style.backgroundColor = theme.bg_color || "white";
-    document.body.style.color = theme.text_color || "black";*/
 
+  // Функция для отображения уведомлений
+  function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, duration);
+  }
+
+  // Применение цветовой темы Telegram
+  function applyTheme() {
     const theme = tg.themeParams || {};
     const bg = theme.bg_color || "#ffffff";
     const text = theme.text_color || "#000000";
     const hint = theme.hint_color || "#999999";
+    const button = theme.button_color || "#007bff";
+    const buttonText = theme.button_text_color || "#ffffff";
+    const secondaryBg = theme.secondary_bg_color || "#f5f5f5";
 
-    const suggestions = document.querySelector(".suggestions");
-    if (suggestions) {
-      suggestions.style.backgroundColor = bg;
-      suggestions.style.color = text;
-      suggestions.style.border = '1px solid ${hint}';
+    // Обновление CSS переменных
+    document.documentElement.style.setProperty('--bg-color', bg);
+    document.documentElement.style.setProperty('--text-color', text);
+    document.documentElement.style.setProperty('--hint-color', hint);
+    document.documentElement.style.setProperty('--input-bg', secondaryBg);
+    document.documentElement.style.setProperty('--button-bg', button);
+    document.documentElement.style.setProperty('--button-hover', button);
+    document.documentElement.style.setProperty('--border-color', hint);
+
+    // Перерисовка карты при смене темы
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 100);
     }
-
-    document.querySelectorAll(".suggestion").forEach(el => {
-      el.style.backgroundColor = bg;
-      el.style.color = text;
-    });
   }
+
+  // Инициализация темы
+  tg.onEvent('themeChanged', applyTheme);
   applyTheme();
 
   const GEOAPIFY_KEY = "39e8705206714ca5bfe88799d07ef7e1";
-  //const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-  const map = L.map('map').setView([51.1657, 10.4515], 6);
+  // Инициализация карты
+  function initMap() {
+    map = L.map('map', {
+      maxBounds: [[47.0, 5.0], [55.0, 15.0]],
+      maxZoom: 18
+    }).setView([51.1657, 10.4515], 6);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-  const drawnItems = new L.FeatureGroup();
-  map.addLayer(drawnItems);
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
 
-  /*if (isIOS) {
-    alert("📱 Auf iPhones kannst du einen Kreisbereich durch Tippen auf die Karte auswählen.");
-    map.on("click", (e) => {
-      const radiusKm = parseInt(document.getElementById("radius").value || "10");
-      const radiusMeters = radiusKm * 1000;
-      drawnItems.clearLayers();
-      const circle = L.circle(e.latlng, { radius: radiusMeters, color: '#3388ff' });
-      drawnItems.addLayer(circle);
-      map.fitBounds(circle.getBounds());
-    });
-  } else {*/
     const drawControl = new L.Control.Draw({
       draw: {
         polygon: true,
@@ -173,21 +270,61 @@
       edit: { featureGroup: drawnItems }
     });
     map.addControl(drawControl);
+
     map.on(L.Draw.Event.CREATED, e => {
       drawnItems.clearLayers();
       drawnItems.addLayer(e.layer);
     });
-  //}
 
-  L.control.locate({
-    position: 'topleft',
-    strings: { title: "Zeige mir meine Position" },
-    flyTo: true
-  }).addTo(map);
+    L.control.locate({
+      position: 'topleft',
+      strings: { title: "Meine Position anzeigen" },
+      flyTo: true
+    }).addTo(map);
 
+    return drawnItems;
+  }
+
+  const drawnItems = initMap();
+
+  // Запрос геолокации
+  (async () => {
+    // Проверка доступности LocationManager
+    if (tg.locationManager?.mount.isAvailable()) {
+      if (confirm("Möchten Sie, dass der Bot Ihren Standort bestimmt?")) {
+        try {
+          await tg.locationManager.mount();
+          if (tg.locationManager.requestLocation.isAvailable()) {
+            const loc = await tg.locationManager.requestLocation();
+            tg.MainButton.hide();
+            updateCircleAndZoom(loc.latitude, loc.longitude);
+          }
+        } catch (err) {
+          console.warn("Geolokation fehlgeschlagen:", err);
+
+          // Обработка отказа пользователя
+          if (err.message.includes("denied") || err.message.includes("aborted")) {
+            showToast("Standortzugriff wurde abgelehnt");
+          }
+
+          if (tg.locationManager.openSettings.isAvailable()) {
+            tg.MainButton
+                    .setText("Geolokation-Einstellungen öffnen")
+                    .show()
+                    .onClick(() => tg.locationManager.openSettings());
+          }
+        }
+      }
+    }
+  })();
+
+  // Нормализация строк для поиска
   function normalize(str) {
-    return str.replace(/ae/g, "ä").replace(/oe/g, "ö").replace(/ue/g, "ü").replace(/ss/g, "ß")
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    return str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/ß/g, "ss")
+            .toLowerCase();
   }
 
   const inputAliasMap = {
@@ -197,91 +334,221 @@
     "brunswick": "braunschweig"
   };
 
-  // Автоподсказка
-  document.getElementById("city").addEventListener("input", function () {
+  // Автоподсказка городов с отменой запросов
+  document.getElementById("city").addEventListener("input", function() {
     clearTimeout(debounceTimer);
+    if (lastController) {
+      lastController.abort();
+      lastController = null;
+    }
+
     let query = this.value.trim();
-    const normalized = normalize(query);
-    if (inputAliasMap[normalized]) query = inputAliasMap[normalized];
-    if (query.length < 2) {
-      document.getElementById("city-suggestions").innerHTML = "";
+    if (!query || query.length < 2) {
+      clearSuggestions();
       return;
     }
 
+    const normalized = normalize(query);
+    if (inputAliasMap[normalized]) query = inputAliasMap[normalized];
+
     debounceTimer = setTimeout(() => {
-      fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+      const controller = new AbortController();
+      lastController = controller;
+
+      fetch(
+              `https://api.geoapify.com/v1/geocode/search?text=${
+                      encodeURIComponent(query)
+              }&lang=de&filter=countrycode:de&limit=5&apiKey=${GEOAPIFY_KEY}`,
+              { signal: controller.signal }
+      )
               .then(res => res.json())
-              .then(data => {
-                const container = document.getElementById("city-suggestions");
-                container.innerHTML = "";
-                const shown = new Set();
-
-                data.features.forEach(feature => {
-                  const city = feature.properties.city || feature.properties.town || feature.properties.village;
-                  if (!city) return;
-
-                  const cityNorm = normalize(city);
-                  if (shown.has(cityNorm)) return;
-                  shown.add(cityNorm);
-
-                  const div = document.createElement("div");
-                  div.className = "suggestion";
-                  div.textContent = city;
-                  div.addEventListener("click", () => {
-                    document.getElementById("city").value = city;
-                    container.innerHTML = "";
-                    const [lon, lat] = feature.geometry.coordinates;
-                    map.setView([lat, lon], 13);
-                  });
-                  container.appendChild(div);
-                });
-
-                if (container.innerHTML === "") {
-                  container.innerHTML = "<div class='suggestion'>Keine passenden Städte gefunden</div>";
+              .then(data => showSuggestions(data.features))
+              .catch(err => {
+                if (err.name !== 'AbortError') {
+                  console.error("Fetch error:", err);
+                  showToast("Fehler bei der Städtesuche");
                 }
               });
     }, 300);
   });
 
+  function clearSuggestions() {
+    document.getElementById("city-suggestions").innerHTML = "";
+  }
+
+  function showSuggestions(features) {
+    const container = document.getElementById("city-suggestions");
+    container.innerHTML = "";
+    const shown = new Set();
+
+    if (!features || features.length === 0) {
+      container.innerHTML = "<div class='suggestion'>Keine Ergebnisse</div>";
+      return;
+    }
+
+    features.forEach(feature => {
+      const city = feature.properties.city || feature.properties.town || feature.properties.village;
+      if (!city) return;
+
+      const cityNorm = normalize(city);
+      if (shown.has(cityNorm)) return;
+      shown.add(cityNorm);
+
+      const div = document.createElement("div");
+      div.className = "suggestion";
+      div.textContent = city;
+      div.addEventListener("click", () => {
+        document.getElementById("city").value = city;
+        clearSuggestions();
+        const [lon, lat] = feature.geometry.coordinates;
+        updateCircleAndZoom(lat, lon);
+      });
+      container.appendChild(div);
+    });
+  }
+
   function updateCircleAndZoom(lat, lon) {
-    const radiusKm = parseInt(document.getElementById("radius").value || "10");
+    if (isNaN(lat) || isNaN(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      showToast("Ungültige Koordinaten");
+      return;
+    }
+
+    const radiusKm = parseInt(document.getElementById("radius").value || "10", 10);
     const radiusMeters = radiusKm * 1000;
-    const circle = L.circle([lat, lon], { radius: radiusMeters, color: '#3388ff' });
+    const circle = L.circle([lat, lon], {
+      radius: radiusMeters,
+      color: '#3388ff',
+      fillOpacity: 0.2
+    });
+
     drawnItems.clearLayers();
     drawnItems.addLayer(circle);
     map.fitBounds(circle.getBounds());
   }
 
+  const LOCAL_STORAGE_KEY = 'tg_rent_bot_filters';
+
+  function saveFiltersLocally(filtersObj) {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtersObj));
+    } catch (e) {
+      console.error('LocalStorage error:', e);
+    }
+  }
+
+  function loadFiltersFromLocal() {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error('LocalStorage parse error:', e);
+      return null;
+    }
+  }
+
+  // Восстановление фильтров
+  function applyFiltersToForm(filters) {
+    if (!filters) return;
+
+    // Восстановление текстовых полей
+    document.getElementById("city").value = filters.city || "";
+    document.getElementById("radius").value = filters.radius || 10;
+
+    // Восстановление чекбоксов
+    document.getElementById('tauschwohnung').checked = !!filters.tauschwohnung;
+    document.getElementById('wbs').checked = !!filters.wbs;
+
+    // Восстановление цен
+    if (filters.price) {
+      document.getElementById('price-min').value = filters.price[0] || "";
+      document.getElementById('price-max').value = filters.price[1] || "";
+    }
+
+    // Восстановление площади
+    if (filters.size) {
+      document.getElementById('size-min').value = filters.size[0] || "";
+      document.getElementById('size-max').value = filters.size[1] || "";
+    }
+
+    // Восстановление выбранных сайтов
+    if (filters.websites) {
+      document.querySelectorAll('#websites input[type=checkbox]').forEach(el => {
+        el.checked = filters.websites.includes(el.value);
+      });
+    }
+
+    // Восстановление зоны на карте
+    if (filters.location) {
+      drawnItems.clearLayers();
+      if (filters.location.type === "circle") {
+        const circle = L.circle(filters.location.center, {
+          radius: filters.location.radius
+        });
+        drawnItems.addLayer(circle);
+        map.fitBounds(circle.getBounds());
+      } else if (filters.location.type === "polygon") {
+        const polygon = L.polygon(filters.location.coordinates);
+        drawnItems.addLayer(polygon);
+        map.fitBounds(polygon.getBounds());
+      }
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    applyFiltersToForm(loadFiltersFromLocal());
+  });
+
   function searchCity() {
     let inputCity = document.getElementById("city").value.trim();
+    if (!inputCity) return;
+
     const normalized = normalize(inputCity);
     if (inputAliasMap[normalized]) inputCity = inputAliasMap[normalized];
 
-    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(inputCity)}&lang=de&filter=countrycode:de&limit=10&apiKey=${GEOAPIFY_KEY}`)
+    fetch(`https://api.geoapify.com/v1/geocode/search?text=${
+            encodeURIComponent(inputCity)
+    }&lang=de&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
             .then(res => res.json())
             .then(data => {
               const match = data.features.find(feature => {
-                const resultCity = feature.properties.city || feature.properties.town || feature.properties.village;
+                const resultCity = feature.properties.city ||
+                        feature.properties.town ||
+                        feature.properties.village;
                 return resultCity && normalize(resultCity) === normalize(inputCity);
               });
+
               if (match) {
                 const [lon, lat] = match.geometry.coordinates;
                 updateCircleAndZoom(lat, lon);
               } else {
-                alert("Stadt nicht gefunden oder liegt nicht in Deutschland.");
+                showToast("Stadt nicht gefunden");
               }
-            });
+            })
+            .catch(() => showToast("Suchfehler"));
   }
 
-  document.getElementById("city").addEventListener("keydown", e => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      searchCity();
-      e.target.blur(); // Закрыть клавиатуру на iOS
-    }
-  });
+  // Валидация числовых полей
+  function setupNumberInput(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", function() {
+        this.value = this.value.replace(/[^\d]/g, "");
+      });
 
-  document.getElementById("radius").addEventListener("change", () => {
+      el.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.target.blur();
+        }
+      });
+    }
+  }
+
+  // Настройка всех числовых полей
+  ['price-min', 'price-max', 'size-min', 'size-max'].forEach(setupNumberInput);
+
+  // Реакция на изменение радиуса
+  document.getElementById("radius").addEventListener("input", () => {
     const layer = drawnItems.getLayers()[0];
     if (layer instanceof L.Circle) {
       const latlng = layer.getLatLng();
@@ -289,8 +556,10 @@
     }
   });
 
-  function getSelectedAreaOrCityFallback() {
+  function getSelectedArea() {
     const layer = drawnItems.getLayers()[0];
+    if (!layer) return null;
+
     if (layer instanceof L.Circle) {
       return {
         type: "circle",
@@ -298,46 +567,90 @@
         radius: layer.getRadius()
       };
     }
-    const cityInput = document.getElementById("city").value.trim();
-    const center = map.getCenter();
-    const radius = parseInt(document.getElementById("radius").value || "10") * 1000;
-    if (cityInput && center) {
-      drawnItems.clearLayers();
-      const circle = L.circle([center.lat, center.lng], { radius: radius, color: '#3388ff' });
-      drawnItems.addLayer(circle);
-      return { type: "circle", center: [center.lat, center.lng], radius: radius };
+
+    if (layer instanceof L.Polygon) {
+      const latlngs = layer.getLatLngs();
+      if (Array.isArray(latlngs) && latlngs.length > 0) {
+        return {
+          type: "polygon",
+          coordinates: latlngs[0].map(ll => [ll.lat, ll.lng])
+        };
+      }
+      return null;
     }
+
     return null;
   }
 
+  function validateNumberInput(value, name) {
+    if (value.trim() === "") return null;
+    const num = parseInt(value, 10);
+    return isNaN(num) ? null : num;
+  }
+
   document.getElementById("save").addEventListener("click", () => {
-    const selectedWebsites = Array.from(document.querySelectorAll('#websites input[type=checkbox]:checked')).map(cb => cb.value);
-    const location = getSelectedAreaOrCityFallback();
-    const city = document.getElementById("city").value.trim();
-    if (!location) return alert("Bitte gib eine Stadt ein oder wähle eine Zone auf der Karte aus!");
-
-    const priceMin = document.getElementById('price-min').value;
-    const priceMax = document.getElementById('price-max').value;
-    const price = priceMin || priceMax ? [
-      parseInt(priceMin || '0'),
-      parseInt(priceMax || '100000')
-    ] : null;
-
-    const sizeMin = document.getElementById('size-min').value;
-    const sizeMax = document.getElementById('size-max').value;
-    const size = sizeMin || sizeMax ? [
-      parseInt(sizeMin || '0'),
-      parseInt(sizeMax || '1000')
-    ] : null;
+    // Валидация выбора сайтов
+    const selectedWebsites = Array.from(
+            document.querySelectorAll('#websites input[type=checkbox]:checked')
+    ).map(cb => cb.value);
 
     if (selectedWebsites.length === 0) {
-      alert("Bitte wähle mindestens eine Website aus!");
+      showToast("Bitte wählen Sie mindestens eine Website");
       return;
     }
 
-    const filters = {
+    // Валидация местоположения
+    const location = getSelectedArea();
+    const city = document.getElementById("city").value.trim();
+    if (!location && !city) {
+      showToast("Bitte Stadt eingeben oder Gebiet auswählen");
+      return;
+    }
+
+    // Валидация цены
+    const priceMin = validateNumberInput(
+            document.getElementById('price-min').value, "Preis (min)"
+    );
+    const priceMax = validateNumberInput(
+            document.getElementById('price-max').value, "Preis (max)"
+    );
+
+    let price = null;
+    if (priceMin !== null || priceMax !== null) {
+      const pMin = priceMin !== null ? priceMin : 0;
+      const pMax = priceMax !== null ? priceMax : 100000;
+
+      if (priceMin !== null && priceMax !== null && pMin > pMax) {
+        showToast("Min-Preis darf nicht höher als Max-Preis sein");
+        return;
+      }
+      price = [pMin, pMax];
+    }
+
+    // Валидация площади
+    const sizeMin = validateNumberInput(
+            document.getElementById('size-min').value, "Größe (min)"
+    );
+    const sizeMax = validateNumberInput(
+            document.getElementById('size-max').value, "Größe (max)"
+    );
+
+    let size = null;
+    if (sizeMin !== null || sizeMax !== null) {
+      const sMin = sizeMin !== null ? sizeMin : 0;
+      const sMax = sizeMax !== null ? sizeMax : 1000;
+
+      if (sizeMin !== null && sizeMax !== null && sMin > sMax) {
+        showToast("Min-Größe darf nicht größer als Max-Größe sein");
+        return;
+      }
+      size = [sMin, sMax];
+    }
+
+    // Формирование объекта фильтров
+    const filtersDE = {
       city,
-      radius: parseInt(document.getElementById("radius").value || "10"),
+      radius: parseInt(document.getElementById("radius").value || "10", 10),
       price,
       size,
       tauschwohnung: document.getElementById('tauschwohnung').checked,
@@ -345,11 +658,12 @@
       location,
       websites: selectedWebsites
     };
-    console.log("📤 Отправка данных в бота:", filters);
-    tg.sendData(JSON.stringify(filters));
+
+    // Сохранение и отправка
+    saveFiltersLocally(filtersDE);
+    tg.sendData(JSON.stringify(filtersDE));
     tg.close();
   });
 </script>
-
 </body>
 </html>
