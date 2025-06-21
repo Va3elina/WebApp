@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Filtereinstellungen</title>
+    <title>Filter settings</title>
 
     <!-- Библиотеки -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -144,25 +144,25 @@
     </style>
 </head>
 <body>
-<h1>Filtereinstellungen</h1>
+<h1>Filter settings</h1>
 
 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 5px;">
     <input type="text" id="city" placeholder="напр. Берлин" style="flex: 1;">
     <select id="radius" style="width: 85px;">
-        <option value="5">5 км</option>
-        <option value="10" selected>10 км</option>
-        <option value="15">15 км</option>
-        <option value="20">20 км</option>
-        <option value="30">30 км</option>
+        <option value="5">5 km</option>
+        <option value="10" selected>10 km</option>
+        <option value="15">15 km</option>
+        <option value="20">20 km</option>
+        <option value="30">30 km</option>
     </select>
 </div>
 <div id="city-suggestions" class="suggestions"></div>
-<button onclick="searchCity()">Искать</button>
+<button onclick="searchCity()">Search</button>
 
 <div id="map"></div>
 
 <div class="input-range">
-    <label>Стоимость, €:</label>
+    <label>Price, €:</label>
     <div class="range-row">
         <input type="number" id="price-min" placeholder="Min">
         <span>–</span>
@@ -171,7 +171,7 @@
 </div>
 
 <div class="input-range">
-    <label>Площадь, м²:</label>
+    <label>Size, m²:</label>
     <div class="range-row">
         <input type="number" id="size-min" placeholder="Min">
         <span>–</span>
@@ -180,8 +180,8 @@
 </div>
 
 <div id="options">
-    <label><input type="checkbox" id="tauschwohnung"> Квартиры для обмена</label>
-    <label><input type="checkbox" id="wbs"> Субсидируемое государством жильё</label>
+    <label><input type="checkbox" id="tauschwohnung"> Swap flats</label>
+    <label><input type="checkbox" id="wbs"> WBS necessary</label>
 </div>
 
 <h3>Websites</h3>
@@ -191,7 +191,7 @@
     <label><input type="checkbox" value="immowelt"> Immowelt.de</label>
 </div>
 
-<button id="save" style="margin-top: 15px">Применить фильтры</button>
+<button id="save" style="margin-top: 15px">Apply filters</button>
 <div id="toast" class="toast"></div>
 
 <script>
