@@ -437,6 +437,16 @@
         }
     }
 
+    function loadFiltersFromLocal() {
+        try {
+            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch (e) {
+            console.error('LocalStorage parse error:', e);
+            return null;
+        }
+    }
+
     // Восстановление фильтров
     function applyFiltersToForm(filters) {
         if (!filters) return;
