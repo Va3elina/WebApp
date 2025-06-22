@@ -508,7 +508,7 @@
 
         fetch(`https://api.geoapify.com/v1/geocode/search?text=${
             encodeURIComponent(inputCity)
-        }&lang=de&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
+        }&lang=en&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
             .then(res => res.json())
             .then(data => {
                 const match = data.features.find(feature => {
@@ -596,7 +596,7 @@
         ).map(cb => cb.value);
 
         if (selectedWebsites.length === 0) {
-            showToast("Bitte wählen Sie mindestens eine Website");
+            showToast("Please select at least one website");
             return;
         }
 
@@ -610,10 +610,10 @@
 
         // Валидация цены
         const priceMin = validateNumberInput(
-            document.getElementById('price-min').value, "Preis (min)"
+            document.getElementById('price-min').value, "Price (min)"
         );
         const priceMax = validateNumberInput(
-            document.getElementById('price-max').value, "Preis (max)"
+            document.getElementById('price-max').value, "Price (max)"
         );
 
         let price = null;
