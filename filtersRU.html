@@ -180,11 +180,11 @@
 </div>
 
 <div id="options">
-    <label><input type="checkbox" id="tauschwohnung"> Квартиры для обмена</label>
-    <label><input type="checkbox" id="wbs"> Субсидируемое государством жильё</label>
+    <label><input type="checkbox" id="tauschwohnung"> Tauschwohnung (Квартиры для обмена)</label>
+    <label><input type="checkbox" id="wbs"> WBS (Субсидируемое государством жильё)</label>
 </div>
 
-<h3>Websites</h3>
+<h3>Сайты (обязательно для заполнения)</h3>
 <div id="websites">
     <label><input type="checkbox" value="immobilienscout24"> ImmobilienScout24.de</label>
     <label><input type="checkbox" value="kleinanzeigen"> Kleinanzeigen.de</label>
@@ -437,16 +437,6 @@
         }
     }
 
-    function loadFiltersFromLocal() {
-        try {
-            const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-            return raw ? JSON.parse(raw) : null;
-        } catch (e) {
-            console.error('LocalStorage parse error:', e);
-            return null;
-        }
-    }
-
     // Восстановление фильтров
     function applyFiltersToForm(filters) {
         if (!filters) return;
@@ -508,7 +498,7 @@
 
         fetch(`https://api.geoapify.com/v1/geocode/search?text=${
             encodeURIComponent(inputCity)
-        }&lang=de&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
+        }&lang=ru&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
             .then(res => res.json())
             .then(data => {
                 const match = data.features.find(feature => {
@@ -522,10 +512,10 @@
                     const [lon, lat] = match.geometry.coordinates;
                     updateCircleAndZoom(lat, lon);
                 } else {
-                    showToast("Stadt nicht gefunden");
+                    showToast("Город не найден");
                 }
             })
-            .catch(() => showToast("Suchfehler"));
+            .catch(() => showToast("Ошибка поиска"));
     }
 
     // Валидация числовых полей
