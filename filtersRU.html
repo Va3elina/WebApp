@@ -370,7 +370,7 @@
                 .then(data => showSuggestions(data.features))
                 .catch(err => {
                     if (err.name !== 'AbortError') {
-                        console.error("Fetch error:", err);
+                        console.error("Ошибка при получении:", err);
                         showToast("Ошибка при поиске города.");
                     }
                 });
