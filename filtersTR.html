@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="tr">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -168,18 +168,18 @@
 <div class="input-range">
     <label>Fiyat (Temel kira), €:</label>
     <div class="range-row">
-        <input type="number" id="price-min" placeholder="Min">
+        <input type="number" id="price-min" placeholder="En az">
         <span>–</span>
-        <input type="number" id="price-max" placeholder="Max">
+        <input type="number" id="price-max" placeholder="En fazla">
     </div>
 </div>
 
 <div class="input-range">
-    <label>Alan, м²:</label>
+    <label>Alan, m²:</label>
     <div class="range-row">
-        <input type="number" id="size-min" placeholder="Min">
+        <input type="number" id="size-min" placeholder="En az">
         <span>–</span>
-        <input type="number" id="size-max" placeholder="Max">
+        <input type="number" id="size-max" placeholder="En fazla">
     </div>
 </div>
 
@@ -364,7 +364,7 @@
             fetch(
                 `https://api.geoapify.com/v1/geocode/search?text=${
                     encodeURIComponent(query)
-                }&lang=de&filter=countrycode:de&limit=5&apiKey=${GEOAPIFY_KEY}`,
+                }&lang=tr&filter=countrycode:de&limit=5&apiKey=${GEOAPIFY_KEY}`,
                 { signal: controller.signal }
             )
                 .then(res => res.json())
@@ -513,7 +513,7 @@
 
         fetch(`https://api.geoapify.com/v1/geocode/search?text=${
             encodeURIComponent(inputCity)
-        }&lang=ru&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
+        }&lang=tr&filter=countrycode:de&apiKey=${GEOAPIFY_KEY}`)
             .then(res => res.json())
             .then(data => {
                 const match = data.features.find(feature => {
